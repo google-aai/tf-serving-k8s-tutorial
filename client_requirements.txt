@@ -1,0 +1,5 @@
+tensorflow==1.4.1
+tensorflow-serving-api==1.4.0
+opencv-python==3.3.0.10
+opencv-contrib-python==3.3.0.10
+grpcio==1.8.4

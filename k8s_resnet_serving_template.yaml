@@ -1,0 +1,56 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app:  # TODO: Create a descriptive label for your pods on k8s
+  name: resnet-deployment
+spec:
+  replicas:  # TODO: use any number, but no more than number of vms on k8s
+  template:
+    metadata:
+      labels:
+        app:  # TODO: Enter the label above for your pods
+    spec:
+      containers:
+      - name: resnet-container
+        image:  # TODO: add the reference to your pushed docker image!
+        imagePullPolicy: Always  # Don't use cached version. Always pull image from container engine
+        #resources:  # TODO (optional): Uncomment these lines to use GPU!
+        #  limits:
+        #    nvidia.com/gpu: 2
+        command:
+          - /usr/bin/tensorflow_model_server
+        args:
+          - --port=9000
+          - --model_name=resnet
+          - --model_base_path=  # TODO: add model path.
+        ports:
+        - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: resnet-service
+  name: resnet-service
+spec:
+  ports:
+  - port: 9000
+    targetPort: 9000
+  selector:
+    app: # TODO: Enter the label used for your pods
+  type: LoadBalancer # Used to distribute traffic to pods
