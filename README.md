@@ -17,8 +17,6 @@ containers.
 * Bonus: Run a notebook to analyze the importance of pixels of an image on its
 final classification result.
 
-
-
 ## Setup
 
 ### Installation
@@ -27,9 +25,9 @@ To create and manage your Kubernetes(K8s) cluster from your local machine,
 download and install the following:
 
 * [docker](https://www.docker.com/)
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/): if you
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (If you
 have [Google Cloud SDK](https://cloud.google.com/sdk/) installed, you can also 
-install kubectl using the command `gcloud components install kubectl`
+install kubectl using the command `gcloud components install kubectl` )
 
 ### Environment Settings
 
@@ -46,15 +44,13 @@ Imagenet. You will be working with the notebook:
 resnet_training_to_serving.ipynb
 ```
 
-There are three options for running this step: locally or via Jupyterhub. We
-recommend using Jupyterhub for educational purposes, as it will teach you
-how to run Jupyter from within Docker and K8s.
+There are several options for running this step. We will list a couple of them
+below.
 
-### 1. Create Servable Model in default environment
+### 1. Create Servable Model in your local environment
 
-If you would like to run the
-notebook in your local environment, create a python 3.5+ virtual environment
-and activate it first, e.g.
+If you would like to run the notebook in your local environment, create a python
+3.5+ virtual environment and activate it, e.g.
 
 ```
 virtualenv -p python3 <path/to/environment>
@@ -68,39 +64,7 @@ pip install -r jupyter_requirements.txt
 jupyter notebook
 ```
 
-### 2. Use Google Cloud Datalab
-
-(For Google Cloud users only!)
-
-If you want to avoid the hassle of creating your own environment to run
-a jupyter notebook, you can use Google Cloud Datalab. Open your 
-[Google Cloud console](https://console.cloud.google.com) and in the top right
-corner, click the ">_" icon to open a cloud shell in your browser. Then execute
-the command:
-
-```
-datalab create <datalab-instance-name>
-```
-
-If you'd like to create an instance with gpu, cloud supports it in beta version:
-```
-datalab beta create-gpu <datalab-instance-name>
-```
-
-Wait a few minutes for the datalab process to complete and ssh keys to
-propagate. Afterwards, you can upload the notebooks in this project to datalab.
-
-If you have [created a storage bucket]() for this lab, you can run an
-additional command at the end of your `resnet_training_to_serving.ipynb`
-notebook to write the resnet_servable directory to your bucket:
-
-```
-!gsutil -m cp -r ./resnet_servable gs://<your-bucket>/resnet_servable
-```
-
-This model becomes accessible from any GKE machine.
-
-### Create Servable Model on Jupyterhub
+### 2. Create Servable Model on Jupyterhub
 
 If you would like to run your notebook on your K8s cluster itself, Kubeflow
 contains a Jupyterhub component that allows you to do just that. Follow the
@@ -111,6 +75,21 @@ to spin up your notebook.
 When you are done creating your model, use the directory tree to find your model
 files (resnet_servable/...), and download them to this project's base directory with
 the same nested directory structure, i.e. resnet_servable/<number>/...
+
+### 3. Use Jupyter on a Google Cloud Machine
+
+(For Google Cloud users only!)
+
+If you want to avoid the hassle of creating your own environment to run
+a jupyter notebook, or build a Docker image, the `gcp` folder contains a couple
+scripts you can use to setup a Google Cloud VM for running your notebooks.
+You may use [compute engine](https://cloud.google.com/compute/) to spin up a
+virtual machine with or without GPU, but make sure that the machine has enough
+disk space (256Gb preferable) and memory (at least 15Gb, more is preferable).
+
+Then ssh into the machine, clone this project's repository, and run the two
+scripts in the `gcp` folder to setup Docker and Jupyter in the proper virtual
+environment.
 
 ## Create a Model Server Docker Image
 
@@ -138,22 +117,19 @@ further image builds, a locally built image will need to be pushed into a
 
 ### Docker file exercise
 
-We would like to add docker images into the
-The Dockerfile.cpu and Dockerfile.gpu files will add a resnet_serving directory
-to the image, and copy your model into the image. It will also copy a batching
-configuration file `batching.conf`.  file which serves as an extra argument into
-the Tensorflow Model Server. To run a docker file, make sure you are in this
-project's main directory. Set your shell variable first to either cpu or gpu,
-and then proceed:
+The Dockerfile.cpu and Dockerfile.gpu files will add a resnet_serving directory,
+and copy your model into the image. To run a docker file, make sure you are in
+this project's main directory. Set your shell variable first to either cpu or
+gpu, and then proceed:
 
 ```
 MACHINE_TYPE=cpu|gpu
 ```
 
-Run through the exercise by editing the docker build that you wish to build.
+Run through the exercise by editing the Docker build that you wish to build.
 The dockerfile to edit is `Dockerfile.$MACHINE_TYPE`.
 
-After editing the file, build the docker image. 
+After editing the file, build the Docker image. 
 
 ```
 docker build -t library/resnet-server-$MACHINE_TYPE:1.0 \
@@ -168,7 +144,7 @@ IMAGE=library/resnet-server-$MACHINE_TYPE:1.0
 docker run -it ${IMAGE}
 ```
 
-then inside your docker, check that your model directory is there:
+then inside your Docker image, check that your model directory is there:
 
 ```
 cd resnet_servable
@@ -178,14 +154,14 @@ ls
 Type `exit` to exit your docker image.
 
 Now you will need `docker push` to push your image to a
-location where they can be deployed on a kubernetes cluster. 
+location where they can be deployed on a Kubernetes cluster. 
 
 ## Pushing the Docker Image to a Container Engine
 
 ### Local Minikube Container Engine
 
 If you already followed the setup instructions for
-docker and minikube, you should have a docker container engine running on
+docker and minikube, you should have a Docker container engine running on
 minikube that has ssh port forwarding to localhost.
 You can push to localhost:5000:
 
@@ -261,21 +237,19 @@ If you are using GKE, you can also spin up a vm on
 there to run your client. This can speed up the network transmission times
 such that you have a better way to profile the speed of your predictions.
 
-### Profiling Latency and Throughput with the Client
+### Profiling Latency
 
-A couple options in the client can be used to profile the serving latency
-and throughput of the client. 
-
-* The flag --profile_only silences the output
-classes and probabilities and simply returns the round trip prediction time
-in milliseconds. 
-* The flag -r creates 2^r copies of the images specified and sends the batch
-to the server.
+Use the resnet profiler to send multiple requests with different batch sizes to
+the server, and get back individual and summary statistics on the round trip
+latency:
+```
+python resnet_profiler.py <args>
+```
 
 **Note:** Tensorflow Serving on GPU can sometimes fail silently if the GPU
-runs out of memory! You will need to carefully tune your batch size to optimize
-performance while preventing OOM errors. For example, if -r is set too large,
-the pod can crash due to out-of-memory errors, and you will need to wait about
+runs out of memory! You will need to either increase memory on your server VMs,
+or carefully tune your batch size to optimize performance while preventing OOM
+errors. OOMS cause the pod to crash (silently), and you will need to wait about
 a minute for a new pod to boot in the background before calling the service
 again. You will receive an rpc error from the client if the pod breaks. You
 can also view the status of your pod using `kubectl get pods`.
@@ -286,15 +260,15 @@ If you wish to scale up your deployment without shutting down the currently
 deployed pods, you can run:
 
 ```
-kubectl scale --replicas=<num-pods> resnet-deployment
+kubectl scale --replicas=<num-pods> deployment/resnet-deployment
 ```
 
 When you direct a client request to the load balancer, it will use
 an elastic search algorithm to assign your request to one of the backend pods.
 
-## Auto-refreshing the model version on GKE
+## Google K8s Engine: Auto-refreshing the model version
 
-Suppose your ML researcher has a new and improved Resnet model, or even a new
+Google K8s Engine offers a special feature! Suppose your ML researcher has a new and improved Resnet model, or even a new
 architecture (e.g. 152-layers!). Tensorflow serving has the feature of
 immediately picking up the newest version of a servable model in your servable
 directory, and serving it immediately! All you need to do is make sure that
@@ -324,9 +298,9 @@ Upload your servable model  directory to the bucket:
 gsutil -m cp -r /local/path/to/servable_dir gs://${BUCKET}/<servable-dir>
 ```
 
-Now edit your yaml file to point to your Google Storage directory. Any time
-you upload a new model version into that directory, TF model server should
-pick it up.
+Now edit your yaml file to point your model path to your Google Storage
+directory. Any time you upload a new model version into that directory, TF model
+server should pick it up.
 
 ## Bonus feature: Model Understanding
 

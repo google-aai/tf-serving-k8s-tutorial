@@ -12,9 +12,10 @@ Select your default project:
 PROJECT=$(gcloud config list --format 'value(core.project)')
 ```
 
-Choose a zone to spin up your kubernetes cluster (e.g. `us-east1-c`):
+[Choose a zone](https://cloud.google.com/compute/docs/gpus/) to spin up your
+Kubernetes cluster:
 ```
-ZONE=<your-zone>
+gcloud config set compute/zone <zone>
 ```
 
 Spin up a Kubernetes cluster in your preferred zone. You can change num-nodes to
@@ -26,35 +27,30 @@ If you want to use cpu only, run:
 
 ```
 gcloud container clusters create kubernetes-cluster \
---scopes storage-rw \
---machine-type n1-standard-4 \
---num-nodes 3 \
---zone ${ZONE} \
---image-type UBUNTU
+  --scopes storage-rw \
+  --machine-type n1-highmem-4 \
+  --num-nodes 3 \
+  --image-type UBUNTU
 ```
 
 If you would like to run with GPU, you will have to use the gcloud beta mode.
 Your accelerator type should be either `nvidia-tesla-k80` or
-`nvidia-tesla-p100`. We explicitly set the gpu count to 2 as GKE will reserve
-two gpus on the same board (Unfortunately, occasional errors occur when
-requesting additional gpus...)
+`nvidia-tesla-p100`. The example below reserves 4 gpus per node.
 
 ```
 ACCEL_TYPE=nvidia-tesla-k80 | nvidia-tesla-p100
 ```
 
 ```
-gcloud beta container clusters create kubernetes-cluster-gpu \
---accelerator type=${ACCEL_TYPE},count=2 \
---zone ${ZONE} \
---cluster-version 1.9.2-gke.1
+gcloud beta container clusters create kubernetes-cluster \
+  --machine-type n1-highmem-4 \
+  --accelerator type=${ACCEL_TYPE},count=4 \
+  --cluster-version 1.9.2-gke.1
 
 ```
 
-**NOTE**: Do NOT try to beta create gpu clusters with a machine type or image
+**NOTE**: Do NOT try to beta create gpu clusters with an image
 type, as this can prevent nvidia drivers (below) from installing properly. 
-
-**NOTE #2**: Do
 
 ## Installing Nvidia Drivers
 
