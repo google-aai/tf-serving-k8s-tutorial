@@ -3,4 +3,6 @@ grpcio==1.8.4
 matplotlib
 opencv-python==3.4.0.12
 opencv-contrib-python==3.4.0.12
+h5py==2.7.1
+keras==2.1.4
 jupyter

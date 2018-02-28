@@ -318,6 +318,11 @@ pixels from a blank image (e.g. all grey pixels) to the actual image.
 The visualization is based on a recent research paper by M. Sundararajan,
  A. Taly, and Q. Yan: [Axiomatic Attribution for Deep Networks](https://arxiv.org/pdf/1703.01365.pdf).
 
+## Bonus content: Creating a Keras Servable
+
+See `keras_resnet_serving.ipynb` for a student exercise, and
+`keras_resnet_serving_solution.ipynb` for the answer.
+
 ## Additional Resources
 
 ### KSonnet and Kubeflow
