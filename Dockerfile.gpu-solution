@@ -20,7 +20,6 @@ WORKDIR /
 
 # Add a symbolic link to make cpu and gpu tf-serving directories consistent
 RUN ln -s /usr/local/bin/tensorflow_model_server /usr/bin/tensorflow_model_server
-RUN mkdir resnet_servable
 
 ADD resnet_servable /resnet_servable
 

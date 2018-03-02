@@ -19,8 +19,6 @@ MAINTAINER Brian Foo <bfoo@google.com>
 # You can replace model-server with a custom name
 WORKDIR /
 
-RUN mkdir resnet_servable
-
 ADD resnet_servable /resnet_servable
 
 CMD ["/bin/bash"]

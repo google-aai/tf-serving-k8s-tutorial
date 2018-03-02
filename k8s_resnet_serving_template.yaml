@@ -31,7 +31,7 @@ spec:
         imagePullPolicy: Always  # Don't use cached version. Always pull image from container engine
         #resources:  # TODO (optional): Uncomment these lines to use GPU!
         #  limits:
-        #    nvidia.com/gpu: 2
+        #    nvidia.com/gpu: 1
         command:
           - /usr/bin/tensorflow_model_server
         args:
