@@ -1,4 +1,4 @@
-tensorflow==1.5.0
+tensorflow==1.4.0
 grpcio==1.8.4
 matplotlib
 opencv-python==3.4.0.12

@@ -35,15 +35,30 @@ Follow these links to setup your K8s environment:
 * [Local: Minikube](LOCAL_SETUP.md)
 * [Cloud: Google K8s Engine](GKE_SETUP.md)
 
-## Create a Servable Resnet Model
+### Checkout Tensorflow Resnet Model
 
-We are going to be creating a servable Resnet model that was trained on
-Imagenet. You will be working with the notebook:
+In order to create a resnet model, we need to checkout the model from the
+Tensorflow models repository. In the parent directory of your
+tf-serving-k8s-tutorial project directory, run the following to checkout the v1.4.0
+branch:
+
+```
+git clone https://github.com/tensorflow/models.git
+cd models
+git checkout v1.4.0 
+```
+
+## Create a Servable Model from Estimator API
+
+Back in your tf-serving-k8s-tutorial project directory, you will be working with
+the notebook:
 
 ```
 resnet_training_to_serving.ipynb
 ```
 
+The notebook guides you on how to create a servable Resnet model trained on
+Imagenet using the [Tensorflow Estimator API](https://www.tensorflow.org/programmers_guide/estimators).
 There are several options for running this step. We will list a couple of them
 below.
 
@@ -64,7 +79,7 @@ pip install -r jupyter_requirements.txt
 jupyter notebook
 ```
 
-### 2. Create Servable Model on Jupyterhub
+### 2. Create Servable Model using Jupyterhub
 
 If you would like to run your notebook on your K8s cluster itself, Kubeflow
 contains a Jupyterhub component that allows you to do just that. Follow the
@@ -90,6 +105,19 @@ disk space (256Gb preferable) and memory (at least 15Gb, more is preferable).
 Then ssh into the machine, clone this project's repository, and run the two
 scripts in the `gcp` folder to setup Docker and Jupyter in the proper virtual
 environment.
+
+## Validate your Servable Model
+
+After completing the exercises in `resnet_training_to_serving.ipynb`, run the
+notebook `resnet_servable_validation.ipynb` to verify that a request from a
+mock client is correctly served.
+
+## Bonus: Create a Servable Model from Keras
+
+Run `keras_resnet_serving.ipynb` for the student exercise, and
+`keras_resnet_serving_solution.ipynb` for the answer. Again, you can pass this
+through the validation notebook to ensure that inputs and outputs are correctly
+hooked up to the Keras model when you generate the servable.
 
 ## Create a Model Server Docker Image
 
@@ -317,11 +345,6 @@ probable class as a function of each pixel, integrated over a path of image
 pixels from a blank image (e.g. all grey pixels) to the actual image.
 The visualization is based on a recent research paper by M. Sundararajan,
  A. Taly, and Q. Yan: [Axiomatic Attribution for Deep Networks](https://arxiv.org/pdf/1703.01365.pdf).
-
-## Bonus content: Creating a Keras Servable
-
-See `keras_resnet_serving.ipynb` for a student exercise, and
-`keras_resnet_serving_solution.ipynb` for the answer.
 
 ## Additional Resources
 

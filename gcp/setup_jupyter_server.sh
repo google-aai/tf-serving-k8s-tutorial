@@ -55,42 +55,42 @@ sudo apt-get install -y \
 # If we are using a GPU machine, install cuda libraries
 if [ -n "$LSPCI_OUTPUT" ]; then
   # The 16.04 installer works with 16.10.
-  sudo curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb \
+  sudo curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb \
     || err 'failed to find cuda repo for ubuntu 16.0'
-  sudo dpkg -i ./cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
+  sudo dpkg -i ./cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
   sudo apt-get update
-  sudo apt-get install cuda-9-0 -y --allow-unauthenticated \
-    || err 'failed to install cuda 9.0'
+  sudo apt-get install cuda-8-0 -y --allow-unauthenticated \
+    || err 'failed to install cuda 8.0'
 
-  # Check for available cuda 9.0 libraries
+  # Check for available cuda 8.0 libraries
   CUDA_LIBRARIES_URL=http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/
 
-  CUDA_9_LIBRARIES=$(curl $CUDA_LIBRARIES_URL \
-    | grep libcudnn7 \
+  CUDA_8_LIBRARIES=$(curl $CUDA_LIBRARIES_URL \
+    | grep libcudnn6 \
     | grep amd64.deb \
-    | grep cuda9.0 \
+    | grep cuda8.0 \
     | sed "s/^.*href='\(.*\)'>.*$/\1/") \
-    || err 'failed to find cuda 9 libraries'
+    || err 'failed to find cuda 8 libraries'
 
-  # Get latest runtime and developer libraries for cuda 9.0
+  # Get latest runtime and developer libraries for cuda 8.0
   # Download and install
-  CUDA_9_RUNTIME_LIBRARY=$(echo "$CUDA_9_LIBRARIES" | grep -v dev | tail -n 1)
-  CUDA_9_DEV_LIBRARY=$(echo "$CUDA_9_LIBRARIES" | grep dev | tail -n 1)
+  CUDA_8_RUNTIME_LIBRARY=$(echo "$CUDA_8_LIBRARIES" | grep -v dev | tail -n 1)
+  CUDA_8_DEV_LIBRARY=$(echo "$CUDA_8_LIBRARIES" | grep dev | tail -n 1)
 
-  sudo curl -O $CUDA_LIBRARIES_URL$CUDA_9_RUNTIME_LIBRARY \
+  sudo curl -O ${CUDA_LIBRARIES_URL}${CUDA_8_RUNTIME_LIBRARY} \
     || err 'failed to download cuda runtime library'
-  sudo curl -O $CUDA_LIBRARIES_URL$CUDA_9_DEV_LIBRARY \
+  sudo curl -O ${CUDA_LIBRARIES_URL}${CUDA_8_DEV_LIBRARY} \
     || err 'failed to download cuda developer library'
-  sudo dpkg -i $CUDA_9_RUNTIME_LIBRARY \
+  sudo dpkg -i ${CUDA_8_RUNTIME_LIBRARY} \
     || err 'failed to install cuda runtime libraries'
-  sudo dpkg -i $CUDA_9_DEV_LIBRARY \
+  sudo dpkg -i ${CUDA_8_DEV_LIBRARY} \
     || err 'failed to install cuda developer libraries'
 
   # Point TensorFlow at the correct library path
   # Export to .bashrc so env variable is set when entering VM shell
   # Remove existing line in bashrc if it already exists.
-  sed -i '/export LD_LIBRARY_PATH.*\/usr\/local\/cuda-9.0/d' $HOME/.bashrc
-  echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-9.0/lib64' \
+  sed -i '/export LD_LIBRARY_PATH.*\/usr\/local\/cuda-8.0/d' $HOME/.bashrc
+  echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64' \
     >> $HOME/.bashrc
 
   # Install cuda profiler tools development library
@@ -125,7 +125,7 @@ pip install -r $BASE_DIR/../jupyter_requirements.txt \
 
 # If this is a GPU machine, install tensorflow-gpu
 if [ -n "$LSPCI_OUTPUT" ]; then
-  pip install tensorflow-gpu==1.5.0
+  pip install tensorflow-gpu==1.4.0
 fi
 
 #### JUPYTER SETUP ####

@@ -16,14 +16,14 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app:  # TODO: Create a descriptive label for your pods on k8s
+    app: my-resnet-app
   name: resnet-deployment
 spec:
-  replicas:  # TODO: use any number, but no more than number of vms on k8s
+  replicas: 2
   template:
     metadata:
       labels:
-        app:  # TODO: Enter the label above for your pods
+        app: my-resnet-app
     spec:
       containers:
       - name: resnet-container
@@ -37,7 +37,7 @@ spec:
         args:
           - --port=9000
           - --model_name=resnet
-          - --model_base_path=  # TODO: add model path.
+          - --model_base_path=/resnet_servable/
         ports:
         - containerPort: 9000
 ---
@@ -52,5 +52,5 @@ spec:
   - port: 9000
     targetPort: 9000
   selector:
-    app:  # TODO: Enter the label used for your pods
+    app: my-resnet-app
   type: LoadBalancer  # Used to distribute traffic to pods
