@@ -5,8 +5,8 @@ VirtualBox and Minikube) as well as on Google Kubernetes Engine (GKE). The key
 objectives of this tutorial are as follows:
 
 * Introduce the tools needed to deploy tf-serving on k8s clusters
-* Convert a graph trained using the Tensorflow estimator API into a servable
-model format.
+* Convert a graph trained using the Tensorflow estimator API, as well as a
+graph with an embedded Keras model, into a servable model format.
 * Build the servable model into a docker image
 * Push the docker image to a docker container registry
 * Deploy the docker image from the registry onto a Kubernetes cluster, where
@@ -154,21 +154,25 @@ gpu, and then proceed:
 MACHINE_TYPE=cpu|gpu
 ```
 
+```
+BUILD=<some build number>
+```
+
 Run through the exercise by editing the Docker build that you wish to build.
-The dockerfile to edit is `Dockerfile.$MACHINE_TYPE`.
+The dockerfile to edit is `Dockerfile.${MACHINE_TYPE}`.
 
 After editing the file, build the Docker image. 
 
 ```
-docker build -t library/resnet-server-$MACHINE_TYPE:1.0 \
- -f Dockerfile.$MACHINE_TYPE .
+docker build -t library/resnet-server-${MACHINE_TYPE}:${BUILD} \
+ -f Dockerfile.${MACHINE_TYPE} .
 ```
 
 If the build succeeds, run the image in interactive mode to check that your
 model directory was correctly copied, e.g.
 
 ```
-IMAGE=library/resnet-server-$MACHINE_TYPE:1.0
+IMAGE=library/resnet-server-$MACHINE_TYPE:${BUILD}
 docker run -it ${IMAGE}
 ```
 
@@ -232,7 +236,7 @@ is available.
 
 Run the following to deploy your pods and the load balancer service:
 ```
-kubectl create -f k8s_resnet_serving.yaml
+kubectl apply -f k8s_resnet_serving.yaml
 ```
 
 Run get and edit commands to check on the progress of your pod deployment. The
@@ -245,6 +249,19 @@ load balancer service (resnet-service) with an external IP address:
 ```
 kubectl get svc
 ```
+
+### Debugging your Deployment
+
+Occasionally, things can go wrong with deployment. If you have trouble getting
+your pods to run properly, you can display logs from each pod by running:
+
+```
+kubectl logs <pod-name>
+```
+
+Usually, the mistake can be as simple as pointing to the wrong directory for
+your model. After you make corrections to your To redeploy your model, 
+
 
 ## TF Client
 
@@ -269,7 +286,19 @@ such that you have a better way to profile the speed of your predictions.
 
 Use the resnet profiler to send multiple requests with different batch sizes to
 the server, and get back individual and summary statistics on the round trip
-latency:
+latency. The keyword arguments are similar to the TF client, but contains a
+couple extra flags for running trials and creating larger batched requests.
+
+**Exercise:** Look at the profiler [resnet_profiler.py](client/resnet_profiler.py).
+Try sending requests with the profiler and compute latency and throughput.
+Latency is simply the round trip delay returned by the profiler. An
+approximation of throughput is the number of batches divided by latency when a
+large batch size is used. Try varying batch sizes between 1 and 256.
+
+What do you notice about CPU performance vs GPU? How does the efficiency improve
+over batch size? When does it stop visibly improving?
+
+
 ```
 python resnet_profiler.py <args>
 ```

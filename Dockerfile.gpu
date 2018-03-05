@@ -21,8 +21,6 @@ WORKDIR /
 # Add a symbolic link to make cpu and gpu tf-serving directories consistent
 RUN ln -s /usr/local/bin/tensorflow_model_server /usr/bin/tensorflow_model_server
 
-#TODO: create a directory in the image within which to store your model
-
-#TODO: add your local servable directory to this path
+#TODO: add your local servable directory to the image
 
 CMD ["/bin/bash"]

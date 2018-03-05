@@ -19,8 +19,6 @@ MAINTAINER Brian Foo <bfoo@google.com>
 # You can replace model-server with a custom name
 WORKDIR /
 
-#TODO: create a directory in the image within which to store your model
-
-#TODO: add your local servable directory to this path
+#TODO: add your local servable directory to the image
 
 CMD ["/bin/bash"]
