@@ -1,15 +1,19 @@
 # Setting up your Local Kubernetes Environment
 
+[Install Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+on your local machine. Note that this will require installing a type-2
+hypervisor such as [VirtualBox](www.virtualbox.org) and a hypervisor driver such
+as [xhyve](https://github.com/mist64/xhyve). **The below instructions assume we
+are using VirtualBox and xhyve, but you are free to use other virtualization
+solutions.**
+
 ## Additional Setup Steps
 
 You will also need to download and install the following:
 
-* [xhyve](https://github.com/mist64/xhyve): a hypervisor driver that is used
-by minikube
-* [VirtualBox](www.virtualbox.org): A hypervisor to spin up local VMs. This will
-be used with docker and minikube.
-* [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/): to run
-kubernetes locally
+* [Docker](https://www.docker.com/)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/): to create
+and manage your cluster (deployments, services, scaling, etc)
 
 ## Spin up a Docker machine
 
@@ -29,8 +33,6 @@ docker-machine ip
 ```
 
 ## Setup Minikube for Docker Access
-
-(For local deployments only!)
 
 Run these commands to ensure that minikube is running and that it has access
 to your local docker image repository.

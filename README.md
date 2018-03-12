@@ -1,46 +1,74 @@
-# Deploying Tensorflow Serving on Kubernetes
+# Deploying Tensorflow Serving using Kubernetes Tutorial
 
-The following tutorial shows how to deploy Tensorflow Serving locally (using
-VirtualBox and Minikube) as well as on Google Kubernetes Engine (GKE). The key
-objectives of this tutorial are as follows:
+### What this project is
+This project is a tutorial that walks through the steps required to deploy and
+[serve a TensorFlow model](https://www.tensorflow.org/serving/serving_basic)
+using [Kubernetes (k8s)](https://kubernetes.io/).
 
-* Introduce the tools needed to deploy tf-serving on k8s clusters
-* Convert a graph trained using the Tensorflow estimator API, as well as a
-graph with an embedded Keras model, into a servable model format.
-* Build the servable model into a docker image
-* Push the docker image to a docker container registry
-* Deploy the docker image from the registry onto a Kubernetes cluster, where
-each container created will be serving the model. Also deploy a external
-load balancer to receive incoming requests and send to different backend
-containers.
-* Send images to the cluster using a client, and receive classification results.
-* Bonus: Run a notebook to analyze the importance of pixels of an image on its
-final classification result.
+The key concepts covered in this tutorial are as follows:
+
+* Convert a TensorFlow(TF) graph trained through various APIs into a servable
+model
+* Dockerize your servable model and push it to a container registry
+* Deploy your Docker container image onto a Kubernetes cluster
+* Deploy a external load balancer to receive requests and send to different
+backend pods/nodes.
+* Send online prediction requests to the cluster via a client.
+* Profile latency and throughput. Experiment with different batch sizes.
+* Visualize image pixel contributions to model predictions to explain how the
+model sees the world.
+
+### What this project is not
+
+This tutorial is not meant to be the quickest path toward deploying TF
+serving using Kubernetes. If you are looking for an automated solution to deploy
+Tensorflow Serving for production, please check out
+[Kubeflow](https://github.com/kubeflow/kubeflow), which automates many of the
+steps covered in this tutorial.
 
 ## Setup
 
-### Installation
+Before the fun begins, we need to setup our environment and k8s clusters. 
 
-To create and manage your Kubernetes(K8s) cluster from your local machine,
-download and install the following:
+As a developer, it often helps to create a local deployment prior to deploying
+on the cloud. Local deployment is challenging in that one's local environment
+varies significantly between individuals. It is up to the student to figure out
+how to setup and validate the following required software for emulating a k8s
+cluster locally. We offer two guides on setting up a local k8s cluster, and a
+cluster on Google Cloud Platform (GCP):
 
-* [docker](https://www.docker.com/)
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (If you
-have [Google Cloud SDK](https://cloud.google.com/sdk/) installed, you can also 
-install kubectl using the command `gcloud components install kubectl` )
-
-### Environment Settings
-
-Follow these links to setup your K8s environment:
 * [Local: Minikube](LOCAL_SETUP.md)
 * [Cloud: Google K8s Engine](GKE_SETUP.md)
 
-### Checkout Tensorflow Resnet Model
+### Additional Required Software
 
-In order to create a resnet model, we need to checkout the model from the
-Tensorflow models repository. In the parent directory of your
-tf-serving-k8s-tutorial project directory, run the following to checkout the v1.4.0
-branch:
+**Note:** if you are running on GCP and wish to skip the tedious step of
+installing software and running a notebook in your local environment, we've
+provided [automated steps](GCP_VM_SETUP.md) to spinning up a virtual machine on
+cloud and doing notebook and Docker exercises there. 
+
+If you are running the tutorial locally, you will need to install the following
+and run the commands below:
+
+* [Python 2.7+ and 3.5+](https://www.python.org/): Since we are working with
+Tensorflow and Python notebooks, we will need python. Make sure you have both
+Python 2 and 3 installed as the notebook exercises require Python 3, but
+Tensorflow serving is only supported in Python 2 currently.
+* [Docker](https://www.docker.com/): to build images that can be deployed on k8s
+* [Git](https://git-scm.com/): so you can access this project and other projects
+* [Pip](https://pip.pypa.io/en/stable/installing/): to install Python packages
+required for the tutorial
+
+Use pip to install virtualenv so we don't mess with your default system's
+Python:
+
+```
+pip install virtualenv
+```
+
+After installing all software, we need to checkout a few github projects.
+In your command line, go to a directory where you wish you checkout projects.
+Then run the following to checkout the v1.4.0 branch for Tensorflow models:
 
 ```
 git clone https://github.com/tensorflow/models.git
@@ -48,76 +76,75 @@ cd models
 git checkout v1.4.0 
 ```
 
-## Create a Servable Model from Estimator API
-
-Back in your tf-serving-k8s-tutorial project directory, you will be working with
-the notebook:
+Next, cd back to the parent directory and checkout our tutorial project:
 
 ```
-resnet_training_to_serving.ipynb
+cd ..
+git clone https://github.com/google-aai/tf-serving-k8s-tutorial.git
+cd tf-serving-k8s-tutorial
 ```
 
-The notebook guides you on how to create a servable Resnet model trained on
-Imagenet using the [Tensorflow Estimator API](https://www.tensorflow.org/programmers_guide/estimators).
-There are several options for running this step. We will list a couple of them
-below.
-
-### 1. Create Servable Model in your local environment
-
-If you would like to run the notebook in your local environment, create a python
-3.5+ virtual environment and activate it, e.g.
-
+Next, set aside a path to build a Python3 virtual environment, and activate
+the environment:
 ```
-virtualenv -p python3 <path/to/environment>
-source <path/to/environment>/bin/activate
+VIRTUAL_ENV_PATH=<path/to/environment>
 ```
 
-Within the virtual environment, install dependencies and run the notebook:
+```
+virtualenv -p python3 ${VIRTUAL_ENV_PATH}
+source ${VIRTUAL_ENV_PATH}/bin/activate
+```
+
+Within the virtual environment, install dependencies from the tutorial project,
+and run the notebook:
 
 ```
 pip install -r jupyter_requirements.txt
 jupyter notebook
 ```
 
-### 2. Create Servable Model using Jupyterhub
+Congratulations! You may now start the exercises!
 
-If you would like to run your notebook on your K8s cluster itself, Kubeflow
-contains a Jupyterhub component that allows you to do just that. Follow the
-[quick start instructions](https://github.com/kubeflow/kubeflow/blob/master/README.md#quick-start)
-and continue through the [user guide](https://github.com/kubeflow/kubeflow/blob/master/user_guide.md)
-to spin up your notebook.
+## Create a Servable Resnet Model from Estimator and Keras APIs
 
-When you are done creating your model, use the directory tree to find your model
-files (resnet_servable/...), and download them to this project's base directory with
-the same nested directory structure, i.e. resnet_servable/<number>/...
+Now that all of the environment setup is out of the way, let’s create a servable model! 
 
-### 3. Use Jupyter on a Google Cloud Machine
+**Exercises:**
 
-(For Google Cloud users only!)
+In the window that contains your Jupyter notebook, open the notebook
+[estimator_training_to_serving.ipynb](./estimator_training_to_serving.ipynb),
+and work through the exercises in there to convert a model trained by the
+[Tensorflow Estimator API](https://www.tensorflow.org/programmers_guide/estimators)
+into a servable "saved model" format. You can also try out
+[keras_training_to_serving.ipynb](./keras_training_to_serving.ipynb)
+to do the same exercise with a prepackaged [Keras](https://keras.io/) model
+trained/loaded with a Tensorflow backend. 
 
-If you want to avoid the hassle of creating your own environment to run
-a jupyter notebook, or build a Docker image, the `gcp` folder contains a couple
-scripts you can use to setup a Google Cloud VM for running your notebooks.
-You may use [compute engine](https://cloud.google.com/compute/) to spin up a
-virtual machine with or without GPU, but make sure that the machine has enough
-disk space (256Gb preferable) and memory (at least 15Gb, more is preferable).
+Note that we've chosen these two API as they are perhaps the most popular
+abstractions of choice used by many ML researchers and practitioners. However,
+one can also build a servable directly from a TF graph using
+tf.saved_model.builder.SavedModelBuilder(). The exported model format will
+be identical regardless of the API used, as long as there is specification for
+how the model should receive input and return output.
 
-Then ssh into the machine, clone this project's repository, and run the two
-scripts in the `gcp` folder to setup Docker and Jupyter in the proper virtual
-environment.
+If you are stuck, please refer to the solution notebooks for hints:
+[estimator_training_to_serving_solution.ipynb](./estimator_training_to_serving_solution.ipynb)
+and [keras_training_to_serving_solution.ipynb](./keras_training_to_serving_solution.ipynb).
 
 ## Validate your Servable Model
 
-After completing the exercises in `resnet_training_to_serving.ipynb`, run the
-notebook `resnet_servable_validation.ipynb` to verify that a request from a
-mock client is correctly served.
+After successfully exporting your servable model to disk, it helps to verify
+that the model can read the expected request format before proceeding to
+Dockerize and deploying to a Kubernetes cluster. The notebook
+[resnet_servable_validation.ipynb](resnet_servable_validation.ipynb) contains
+code to validate that your servable Resnet model performs the right operations
+in terms of input and output.
 
-## Bonus: Create a Servable Model from Keras
+**Note:** if you plan to run on GPU and use data_format=“channels_first” in
+the Estimator model for GPU deployment, please remember to start with
+“channels_last” for this validation step, and then create a new model with
+“channels_first” to test on your GPU cluster later on.
 
-Run `keras_resnet_serving.ipynb` for the student exercise, and
-`keras_resnet_serving_solution.ipynb` for the answer. Again, you can pass this
-through the validation notebook to ensure that inputs and outputs are correctly
-hooked up to the Keras model when you generate the servable.
 
 ## Create a Model Server Docker Image
 
@@ -145,50 +172,103 @@ further image builds, a locally built image will need to be pushed into a
 
 ### Docker file exercise
 
-The Dockerfile.cpu and Dockerfile.gpu files will add a resnet_serving directory,
-and copy your model into the image. To run a docker file, make sure you are in
-this project's main directory. Set your shell variable first to either cpu or
-gpu, and then proceed:
+![Whale hello there](img/whale_docker.png)
+
+Now that you’ve created a servable model and saved it to a directory
+`resnet_servable` under your project folder on your VM, you will build a
+[Docker image](https://docs.docker.com/get-started/#images-and-containers).
+Docker images are executable packages that contain everything needed to run an
+application, e.g. code, runtime, libraries, environment variables, configuration
+files, as well as the underlying OS. Images are often built on top of other
+Docker images, which are built on top of other images, etc, much like version
+control. For instance, [Dockerfile.cpu](./Dockerfile.cpu) contains the line:
+
+```
+FROM gcr.io/kubeflow/model-server:1.0
+```
+
+This means the image `gcr.io/kubeflow/model-server:1.0` is used as a base image,
+and run additional commands (specified in the Docker file) to modify that image,
+such as installing new software, uploading files from your local environment,
+etc. Running `docker build` using this docker file will create a new
+docker image that is the result of running these additional commands on the
+image `gcr.io/kubeflow/model-server:1.0`.
+ 
+**Note:** The base images provided in this lab come from the
+[Kubeflow](https://github.com/kubeflow/kubeflow) and already contain a
+TensorFlow Model Server installed as an executable. If you did not have such an
+image available, you would have to build it from
+[another Dockerfile](https://github.com/kubeflow/kubeflow/blob/master/components/k8s-model-server/images/Dockerfile.cpu),
+and then using your newly built image as the base image for your final
+Dockerfile.
+
+**Exercise:**
+
+In the same environment used to spawn your Jupyter notebook (local or cloud VM),
+cd into the tutorial directory (i.e. `tf-serving-k8s-tutorial`), and setup a
+shell variable for the next few steps. Choose the one that corresponds with
+your Kubernetes deployment environment - you will either be deploying to a
+cluster with CPUs or GPUs for serving:
 
 ```
 MACHINE_TYPE=cpu|gpu
 ```
 
-```
-BUILD=<some build number>
-```
+Next, edit your Docker file. Dockerfile.${MACHINE_TYPE} is currently incomplete.
+Add your servable model folder to your image’s root directory “/”. (See this
+page for usage of ADD command.) The final result should be that your image
+contains a folder “resnet_servable” with a timestamp version subfolder and
+other contents within it. 
 
-Run through the exercise by editing the Docker build that you wish to build.
-The dockerfile to edit is `Dockerfile.${MACHINE_TYPE}`.
+**Note:** You are encouraged to remove any older versions of the model from your
+resnet_serving directory in the docker to reduce the size of the docker
+container; however, the TF model server will still run correctly even with
+multiple model versions, as it will only pick up the latest (highest integer)
+version.
 
-After editing the file, build the Docker image. 
-
-```
-docker build -t library/resnet-server-${MACHINE_TYPE}:${BUILD} \
- -f Dockerfile.${MACHINE_TYPE} .
-```
-
-If the build succeeds, run the image in interactive mode to check that your
-model directory was correctly copied, e.g.
-
-```
-IMAGE=library/resnet-server-$MACHINE_TYPE:${BUILD}
-docker run -it ${IMAGE}
-```
-
-then inside your Docker image, check that your model directory is there:
+After you are done editing your file, try building the Docker image. We've
+created a versioning bash command below that will increment your build version
+every time you build an image:
 
 ```
-cd resnet_servable
-ls
+BUILD=1 #assign this only once
 ```
 
-Type `exit` to exit your docker image.
+Then run this every time you build (For those running on a Google Cloud VM, make
+sure to use `sudo` before every docker command below, since root permissions are
+required to install, and therefore run, Docker.):
 
-Now you will need `docker push` to push your image to a
-location where they can be deployed on a Kubernetes cluster. 
+```
+IMAGE=library/resnet-server-${MACHINE_TYPE}:${BUILD}
+sudo docker build -t ${IMAGE} \
+-f Dockerfile.${MACHINE_TYPE} .
+BUILD=$[BUILD+1]
+```
+
+**Note:** If this is your first time building, you will notice that Docker
+starts downloading and extracting numerous images, which is basically like a
+version control system checking out all the diffs in your code repository!
+
+Once the build succeeds, you can check that your directory contents were added
+correctly to the image. Run the command below to run shell in your image:
+
+```
+docker run -it ${IMAGE} bash
+```
+
+Inside this shell you can `cd resnet_servable` and check that the
+version/timestamp folder and other files are in there. To exit this shell,
+type `exit`. If you are stuck, you can always use the solutions dockerfiles
+([Dockerfile.cpu-solution](./Dockerfile.cpu-solution) and
+[Dockerfile.gpu-solution](./Dockerfile.gpu-solution)).
 
 ## Pushing the Docker Image to a Container Engine
+
+![container everywhere](img/container_everywhere.png)
+
+In order to make your Dockerfile accessible to other machines (and your
+Kubernetes cluster), you must upload your image to a
+[Docker registry](https://docs.docker.com/registry/).
 
 ### Local Minikube Container Engine
 
@@ -202,9 +282,22 @@ docker tag library/resnet-server localhost:5000/${IMAGE}
 docker push localhost:5000/${IMAGE}
 ```
 
+You can now deploy containers from this address to your Minikube cluster!
+
 ### Google Container Engine
 
-Make sure you setup som
+Double check that your project settings are correct:
+
+```
+gcloud config list project
+```
+
+Take your project name and set it to your bash variable:
+
+```
+PROJECT=<your-project-name>
+```
+
 Tag your docker image and push it to the Google Cloud container registry using
 the `gcloud docker` command:
 
@@ -213,103 +306,175 @@ docker tag ${IMAGE} gcr.io/${PROJECT}/${IMAGE}
 gcloud docker -- push gcr.io/${PROJECT}/${IMAGE}
 ```
 
-## Edit Kubernetes Configuration Files
+In your [console view](https://console.cloud.google.com), click on the dropdown
+menu under TOOLS → container registry → images, and you should notice a nested
+folder “library/resnet-server-${MACHINE_TYPE}” that contains the ${BUILD}
+version in there. Your image is now stored at an address:
 
-If you have multiple clusters running (e.g. minikube and GKE), check that your
-kubectl is pointing to your intended cluster by default, and switch if
-necessary. [See here](KUBECTL_BASICS.md).
+gcr.io/${PROJECT}/library/resnet-server-${MACHINE_TYPE}:${BUILD}
 
-We will now modify a yaml file to deploy the container and a front end load
-balancer to your kubernetes cluster. Copy the file
-`k8s_resnet_serving_template.yaml` over and fix the TODO lines:
+You can now use this image address to deploy to a Kubernetes cluster!
+
+## Deploy the Image to Kubernetes
+
+In this section you will edit a configuration file to deploy the image uploaded
+to your registry onto a Kubernetes(k8s) cluster. During deployment, k8s will
+create [pods](https://kubernetes.io/docs/concepts/workloads/pods/pod/) in the
+backend. In our case, each pod will host only a single container image and
+therefore, only one application, namely, the TensorFlow Model Server.
+
+By default, pods are not exposed to outside traffic. Instead, we will deploy a
+frontend [service](https://kubernetes.io/docs/concepts/services-networking/service/)
+to redirect traffic to backend pods. The redirection is accomplished through the
+use of [selectors and labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/), and 
+[load balancing](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/)
+as determined by the cloud provider.
+
+**Exercise:**
+
+We are going to create a simple deployment with 2 pods in the backend, and 1
+load balancer service in the frontend.
+
+Make sure that you have the tutorial checked out in your cloud control
+environment. This would either be your local command line, or the cloud shell
+![cloud shell](img/gcp_shell.png) window under your console page.
+
+```
+cd ~/tf-serving-k8s-tutorial
+```
+
+Copy the file [k8s_resnet_serving_template.yaml](./k8s_resnet_serving_template.yaml)
+over and fix the TODO lines:
 
 ```
 cp k8s_resnet_serving_template.yaml k8s_resnet_serving.yaml
-# Edit k8s_resnet_serving.yaml
+# Run vi/emacs/nano/notepad k8s_resnet_serving.yaml
 ```
 
-Note that the yaml file will create a LoadBalancer service, and a backend
-deployment. The backend deployment consists of pods (replicas) that require
-different types and amounts of resources on your cluster. If your cluster has
-insufficient resources, you will only spin up a number of pods based on what
-is available.
+**Note:** the yaml file specifies a LoadBalancer service, and a backend
+deployment of pods with different types and amounts of resources on your cluster
+(i.e. gpu if you are on a gpu machine). If your cluster has insufficient
+resources for the number of replicas (pods) specified in the config file,
+Kubernetes will only spin up a number of pods based on what is available.
 
-Run the following to deploy your pods and the load balancer service:
+Once you are done editing the config file, run the following to deploy your pods
+and the load balancer service to your cluster:
+
 ```
 kubectl apply -f k8s_resnet_serving.yaml
 ```
 
-Run get and edit commands to check on the progress of your pod deployment. The
-Tensorflow Server should be ready once you see the log display 
+You can now check on the progress of  your pod deployment by running:
 
-The LoadBalancer service exposes a public port (9000). Running the following
-will show you all of the active services on your cluster. You will see your
-load balancer service (resnet-service) with an external IP address:
+```
+kubectl get pods
+```
+
+The pods should take a couple of minutes to deploy. Proceed after they are in
+`Running` state, e.g.
+
+```
+NAME                                 READY     STATUS    RESTARTS   AGE
+resnet-deployment-86b9d9b784-2kdt8   2/2       Running   0          3m
+```
+
+You can also check what services are available:
 
 ```
 kubectl get svc
 ```
 
-### Debugging your Deployment
+Your output should look something like the display below. Notice that there is a
+LoadBalancer service that will eventually expose an external-ip and a public
+port (9000).
 
-Occasionally, things can go wrong with deployment. If you have trouble getting
-your pods to run properly, you can display logs from each pod by running:
+```
+NAME             TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)          AGE
+kubernetes       ClusterIP      aa.bb.cc.dd    <none>         443/TCP          30m
+resnet-service   LoadBalancer   xx.yy.zz.ww    XX.YY.ZZ.WW    9000:30867/TCP   1m
+```
+
+You can now make client calls to the service “resnet-service” using the exposed
+IP and port!
+
+**Debugging:** Occasionally, things can go wrong with deployment. If you have
+trouble getting your pods to run properly, you can display logs from each pod by
+running:
 
 ```
 kubectl logs <pod-name>
 ```
 
 Usually, the mistake can be as simple as pointing to the wrong directory for
-your model. After you make corrections to your To redeploy your model, 
+your model.
 
+To redeploy your model, simply edit your yaml (e.g., update the version number)
+and reapply the deployment. Note that the deployment section of the file needs
+to be changed in order for the configuration to be redeployed:
+
+```
+kubectl apply -f k8s_resnet_serving.yaml
+```
+
+For additional kubectl basic commands, [see here](KUBECTL_BASICS.md).
 
 ## TF Client
 
-From the strata2018 project directory, create a *Python 2* virtual environment,
-and run:
+In your Jupyter/Docker-building environment (either local or the
+jupyter-and-docker-vm on cloud), create a *Python 2* virtual environment.
+
+```
+deactivate  # Run only if you need to exit the Python 3 virtual environment.
+virtualenv <path/to/client-virtualenv>
+source <path/to/client-virtualenv>/bin/activate
+```
+
+cd into the tutorial project directory (`tf-serving-k8s-tutorial`), and run:
 
 ```
 pip install -r client_requirements.txt
 ```
 
-Next run the resnet client. You can list as many images as you'd like:
-```
-python resnet_client.py --server <load-balancer-ip> --port 9000 <image1> <image2> ...
-``` 
+Then cd into the client directory within the tutorial project:
 
-If you are using GKE, you can also spin up a vm on
-[Compute Engine](https://cloud.google.com/compute/) and checkout this project
-there to run your client. This can speed up the network transmission times
-such that you have a better way to profile the speed of your predictions.
+```
+cd client
+```
+
+To run the client, enter the command:
+
+```
+python resnet_client.py --server <load-balancer-external-ip> \
+  --port 9000 \
+  <image-path-or-url-1> <image-path-or-url-2> ...
+```
+
+For the external-ip, if you are using minikube, the ip should be `localhost`.
+If you are running on Google Cloud, you can find the ip by running
+`kubectl get svc`.
+
+For the image paths and/or urls, you can use the cat_sample.jpg in the current
+directory, or you find some RGB pictures online, such as:
+https://www.popsci.com/sites/popsci.com/files/styles/1000_1x_/public/images/2017/09/depositphotos_33210141_original.jpg?itok=MLFznqbL&fc=50,50
+
+![you just got served](img/you_got_served.png)
 
 ### Profiling Latency
 
-Use the resnet profiler to send multiple requests with different batch sizes to
-the server, and get back individual and summary statistics on the round trip
-latency. The keyword arguments are similar to the TF client, but contains a
-couple extra flags for running trials and creating larger batched requests.
-
-**Exercise:** Look at the profiler [resnet_profiler.py](client/resnet_profiler.py).
+**Exercise:**: Look at the profiler [resnet_profiler.py](client/resnet_profiler.py).
 Try sending requests with the profiler and compute latency and throughput.
 Latency is simply the round trip delay returned by the profiler. An
 approximation of throughput is the number of batches divided by latency when a
 large batch size is used. Try varying batch sizes between 1 and 256.
 
-What do you notice about CPU performance vs GPU? How does the efficiency improve
-over batch size? When does it stop visibly improving?
+What do you notice about CPU/GPU performance with different batch sizes?
 
-
-```
-python resnet_profiler.py <args>
-```
-
-**Note:** Tensorflow Serving on GPU can sometimes fail silently if the GPU
-runs out of memory! You will need to either increase memory on your server VMs,
-or carefully tune your batch size to optimize performance while preventing OOM
-errors. OOMS cause the pod to crash (silently), and you will need to wait about
-a minute for a new pod to boot in the background before calling the service
-again. You will receive an rpc error from the client if the pod breaks. You
-can also view the status of your pod using `kubectl get pods`.
+**Remark:** Profiling is a very important step when you are trying to setup a
+robust server. GPUs are great performers, but stop providing gains after a
+certain batch size. Furthermore, servers can run out of memory, in which case TF
+serving often crashes silently, i.e. `kubectl logs <pod>` won't return anything
+useful. When you deploy your own Kubernetes system, you will need to ensure that
+your machine can load your model and process requested batch sizes.
 
 ## Scaling up your application
 
@@ -323,9 +488,15 @@ kubectl scale --replicas=<num-pods> deployment/resnet-deployment
 When you direct a client request to the load balancer, it will use
 an elastic search algorithm to assign your request to one of the backend pods.
 
+**Challenge**: We’ve defaulted the deploying to exactly 2 pods, but your server
+isn’t always busy. Deploying a cluster on cloud, especially with GPU, can be
+expensive! Can you modify your yaml configuration to create an auto-scaling
+deployment? (See [here](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).)
+
 ## Google K8s Engine: Auto-refreshing the model version
 
-Google K8s Engine offers a special feature! Suppose your ML researcher has a new and improved Resnet model, or even a new
+Google Cloud K8s Engine offers a special feature! Suppose your ML researcher has
+a new and improved Resnet model, or even a new
 architecture (e.g. 152-layers!). Tensorflow serving has the feature of
 immediately picking up the newest version of a servable model in your servable
 directory, and serving it immediately! All you need to do is make sure that
@@ -359,10 +530,88 @@ Now edit your yaml file to point your model path to your Google Storage
 directory. Any time you upload a new model version into that directory, TF model
 server should pick it up.
 
-## Bonus feature: Model Understanding
+## Profiling with Kubernetes Heapster
 
-Using either your local environment or a Kubernetes Cluster deployment of
-Jupyterhub, run the notebook:
+![the hipster kube](img/heapster_kube.png)
+
+(This exercise is more interesting if done on cloud, but can be made to work on
+Minikube as well.)
+
+[Kubernetes Heapster](https://github.com/kubernetes/heapster) is an open-sourced
+project that can be installed as a service on any Kubernetes cluster. It creates
+a Grafana dashboard that is integrated with various backend DBs that store data
+about the cluster or its nodes (e.g. cpu usage, memory). By default, influxDB
+is used for storing the data. 
+
+**Exercise 1:**
+From your cloud controller environment (local or cloud shell
+![cloud shell](img/gcp_shell.png) under the console), cd out of your
+project directory (e.g. go to the parent directory of the tutorial project), and
+run:
+
+```
+git clone https://github.com/kubernetes/heapster
+cd heapster
+```
+
+Next follow the instructions at
+https://github.com/kubernetes/heapster/blob/master/docs/influxdb.md 
+Note that running the “kubectl create” lines may return errors on Google K8s
+Engine since the heapster service may already exists on Cloud, but other
+components such as “monitoring-grafana”, which are necessary for this exercise,
+will be deployed. The goal is to get a grafana dashboard up and running. By
+default, the dashboard will monitor individual pods as well as aggregate cluster
+metrics, such as CPU usage.
+
+![heapster grafana ui](img/heapster_grafana.png)
+
+Heapster will be running in the namespace `kube-system`. To see what processes are running there, enter:
+
+```
+kubectl get services --namespace=kube-system
+```
+
+**Note:** To access the grafana dashboard, you will need to give the
+monitoring-grafana service an external IP! To do this, you will need to change
+the service type to LoadBalancer.
+
+**Hint:** Use “kubectl edit svc …”
+If you followed all the steps correctly, you should be able to access the
+Grafana dashboard and discover Cluster and Pods in the dropdown menu at the top left.
+
+**Exercise 2:**
+Try running the profiler client from your VM ssh shell. Create a job with
+multiple iterations and replications which runs for a couple of minutes. Which
+pods are receiving requests, and how are requests distributed? What happens if
+you make multiple client calls simultaneously? How are the requests being load
+balanced in the backend?
+
+```
+for i in {1..10}
+do
+  python resnet_profiler.py ...  &
+done
+```
+
+**Remark #1:** The TensorFlow Model Server is primarily used for online
+predictions. Due to caching in the TensorFlow Serving api code, if a client
+sends multiple requests to a server, it will always use the same connection to
+the same server and hence, the same backend pod! However, if online prediction
+requests are coming from many processes or nodes, they will be spread out across
+all pods in the cluster.
+
+**Remark #2:** Heapster currently does not support GPU profiling. However,
+[cAdvisor](https://github.com/google/cadvisor) (a daemon used by Kubernetes to
+collect, aggregate, and export container data) has recently introduced GPU
+profiling. If you are running on Google Cloud,
+[Stackdriver](https://cloud.google.com/stackdriver/) also enables GPU
+monitoring.
+
+## Model Understanding and Visualization
+
+As a bonus feature, we offer ways to validate a served model through
+visualization! Run this notebook:
+
 ```
 resnet_model_understanding.ipynb
 ```
@@ -377,36 +626,29 @@ The visualization is based on a recent research paper by M. Sundararajan,
 
 ## Additional Resources
 
-### KSonnet and Kubeflow
-
-Much of this tutorial borrows configurations and docker images out of
-[Kubeflow](https://github.com/kubeflow/kubeflow), or are otherwise customized
-from their project. After completing this tutorial, please check out their
-project for convenient libraries for deploying end-to-end deployment solutions
-for Tensorflow serving using [ksonnet](https://github.com/ksonnet).
-
-Ksonnet allows you to define functions that take in parameters that determine
-the value of fields set in your yaml file. Furthermore, these parameter values
-can be configured at the command line for different environments. 
-
-For example, if you want 1 replicas (pod) deployed on minikube but 5 on GKE,
-you can create a ksonnet function that takes in `replicas` as a parameter.
-You then specify two environments (e.g. minikube and cloud) and set parameters
-for each environment, e.g. `ks param set $COMPONENT_NAME replicas 5 env=cloud`.
-To learn more about ksonnet:
-
-* [ksonnet.io](https://ksonnet.io/tour/welcome) offers a tutorial showing how to
-deploy and scale an app. 
-* [Kubeflow](https://github.com/kubeflow/kubeflow) is a great resource for
-examples using ksonnet to deploy TF notebook, jobs, and serving. It also
-includes various prototypes used to generate the ksonnet files.
-
-## Disclaimers and Pitfalls
+### General Disclaimers and Pitfalls
 
 * Tensorflow Server is written in c++, so any Tensorflow code in your
 model that has python libraries embedded in it (e.g. using tf.py_func()) will
 FAIL! 
-* Security is an issue in the demo above! Simply changing your model server to a `LoadBalancer` to open up
-a tcp port for serving is not secure! Google Cloud IAP enables secure
-identity. [See the Kubeflow documentation](https://github.com/kubeflow/kubeflow/blob/master/docs/gke/iap.md)
+* Security is an issue in this tutorial! Simply changing your model server to a
+`LoadBalancer` to open up a tcp port for serving is not secure! If you are
+running on cloud, you will need to enable secure identity for your k8s cluster,
+such as Google Cloud IAP.
+[See the Kubeflow IAP documentation](https://github.com/kubeflow/kubeflow/blob/master/docs/gke/iap.md)
 for more information. 
+
+### KSonnet and Kubeflow
+
+* [Kubeflow](https://github.com/kubeflow/kubeflow) automates Kubernetes
+deployments for TF notebook, model training (distributed and GPU), and model
+serving. Much of this tutorial's content (i.e. deploying TF serving) can be
+automated using their solutions. Please check out their project and contribute
+to the discussion!
+* [ksonnet.io](https://ksonnet.io/tour/welcome) Ksonnet allows you to define
+functions that take in parameters that determine
+the value of fields set in your yaml file. Furthermore, these parameter values
+can be configured at the command line for different environments. Try out their
+tutorial!
+
+
