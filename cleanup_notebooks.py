@@ -59,7 +59,8 @@ for notebook_path in notebook_paths:
     cell_array = notebook_json['cells']
     for cell in cell_array:
       cell_metadata = cell['metadata']
-      for key in cell_metadata.keys():
+      metadata_keys = list(cell_metadata.keys())
+      for key in metadata_keys:
         if key not in VALID_CELL_METADATA_KEYS:
           cell_metadata.pop(key)
 

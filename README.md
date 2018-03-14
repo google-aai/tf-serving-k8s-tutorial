@@ -21,7 +21,7 @@ model sees the world.
 ### What this project is not
 
 This tutorial is not meant to be the quickest path toward deploying TF
-serving using Kubernetes. If you are looking for an automated solution to deploy
+serving using Kubernetes. If you are looking for automated solutions to deploy
 Tensorflow Serving for production, please check out
 [Kubeflow](https://github.com/kubeflow/kubeflow), which automates many of the
 steps covered in this tutorial.
@@ -34,8 +34,8 @@ As a developer, it often helps to create a local deployment prior to deploying
 on the cloud. Local deployment is challenging in that one's local environment
 varies significantly between individuals. It is up to the student to figure out
 how to setup and validate the following required software for emulating a k8s
-cluster locally. We offer two guides on setting up a local k8s cluster, and a
-cluster on Google Cloud Platform (GCP):
+cluster locally. We offer some guides on setting up a local k8s cluster, as well
+as setting up a cluster on Google Cloud Platform (GCP):
 
 * [Local: Minikube](LOCAL_SETUP.md)
 * [Cloud: Google K8s Engine](GKE_SETUP.md)
@@ -47,8 +47,10 @@ installing software and running a notebook in your local environment, we've
 provided [automated steps](GCP_VM_SETUP.md) to spinning up a virtual machine on
 cloud and doing notebook and Docker exercises there. 
 
-If you are running the tutorial locally, you will need to install the following
-and run the commands below:
+**For running the tutorial notebooks and Docker locally, follow the instructions
+below**:
+
+Install the following:
 
 * [Python 2.7+ and 3.5+](https://www.python.org/): Since we are working with
 Tensorflow and Python notebooks, we will need python. Make sure you have both
@@ -59,8 +61,8 @@ Tensorflow serving is only supported in Python 2 currently.
 * [Pip](https://pip.pypa.io/en/stable/installing/): to install Python packages
 required for the tutorial
 
-Use pip to install virtualenv so we don't mess with your default system's
-Python:
+Use pip to install virtualenv so we can create virtual environments that will
+not affect your system's default Python libraries:
 
 ```
 pip install virtualenv
@@ -107,7 +109,8 @@ Congratulations! You may now start the exercises!
 
 ## Create a Servable Resnet Model from Estimator and Keras APIs
 
-Now that all of the environment setup is out of the way, let’s create a servable model! 
+Now that all of the environment setup is out of the way, let’s create a servable
+model!
 
 **Exercises:**
 
@@ -130,6 +133,19 @@ how the model should receive input and return output.
 If you are stuck, please refer to the solution notebooks for hints:
 [estimator_training_to_serving_solution.ipynb](./estimator_training_to_serving_solution.ipynb)
 and [keras_training_to_serving_solution.ipynb](./keras_training_to_serving_solution.ipynb).
+
+## Unit Testing your Code
+
+The Estimator and Keras notebooks demonstrate how one can refactor training
+code into production code in order to perform unit testing. Additionally,
+we have provided samples from the
+[Tensorflow unit testing](https://www.tensorflow.org/api_guides/python/test) and
+[Tensorflow Eager](https://research.googleblog.com/2017/10/eager-execution-imperative-define-by.html)
+frameworks for the interested reader. These are both helpful tools to help you
+debug Tensorflow functions that would otherwise be part of an end-to-end
+Tensorflow graph. Note that unit testing is a more formal software engineering
+framework, while Eager is more data science-driven (You can immediately validate
+the result of running data through a Tensorflow graph as you construct it.)
 
 ## Validate your Servable Model
 

@@ -26,8 +26,8 @@ If you need to set it, run:
 gcloud config set compute/zone <zone>
 ```
 
-Next, run the following command the create your cloud VM. Give it extra
-memory for a later visualization exercise:
+Next, run the following command to create your Jupyter and Docker VM. Give it
+extra memory for a later visualization exercise:
 
 gcloud compute instances create jupyter-and-docker-vm \
   --custom-cpu 8 \
@@ -51,7 +51,8 @@ your browser blocks pop-ups the first time.
 ![compute vm img](img/gcp_compute_vms.png)
 ![vm_ssh_button](img/vm_ssh_button.png)
 
-**Run the rest of these commands inside the VM’s ssh pop-up window:**
+**Run the rest of these commands inside the jupyter-and-docker-vm's ssh pop-up
+window:**
 
 Checkout the Tensorflow model directory so we have access to various pre-trained
 models. We’re going to use a particular tag v1.4.0 to ensure stability of this
@@ -106,8 +107,7 @@ nohup jupyter notebook &
 
 ## Connecting to your Jupyter Notebook
 
-**Run the rest of this on your local machine command line with Google Cloud SDK
-installed:**
+**Run the rest of this locally in command line:**
 
 ```
 gcloud compute config-ssh
