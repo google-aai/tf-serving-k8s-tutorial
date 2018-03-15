@@ -3,14 +3,14 @@
 ### What this project is
 This project is a tutorial that walks through the steps required to deploy and
 [serve a TensorFlow model](https://www.tensorflow.org/serving/serving_basic)
-using [Kubernetes (k8s)](https://kubernetes.io/).
+using [Kubernetes (K8s)](https://kubernetes.io/).
 
 The key concepts covered in this tutorial are as follows:
 
 * Convert a TensorFlow(TF) graph trained through various APIs into a servable
 model
 * Dockerize your servable model and push it to a container registry
-* Deploy your Docker container image onto a Kubernetes cluster
+* Deploy your Docker container image onto a Kubernetes(K8s) cluster
 * Deploy a external load balancer to receive requests and send to different
 backend pods/nodes.
 * Send online prediction requests to the cluster via a client.
@@ -24,17 +24,17 @@ This tutorial is not meant to be the quickest path toward deploying TF
 serving using Kubernetes. If you are looking for automated solutions to deploy
 Tensorflow Serving for production, please check out
 [Kubeflow](https://github.com/kubeflow/kubeflow), which automates many of the
-steps covered in this tutorial.
+Docker/K8s steps covered in this tutorial.
 
 ## Setup
 
-Before the fun begins, we need to setup our environment and k8s clusters. 
+Before the fun begins, we need to setup our environment and K8s clusters. 
 
 As a developer, it often helps to create a local deployment prior to deploying
 on the cloud. Local deployment is challenging in that one's local environment
 varies significantly between individuals. It is up to the student to figure out
-how to setup and validate the following required software for emulating a k8s
-cluster locally. We offer some guides on setting up a local k8s cluster, as well
+how to setup and validate the following required software for emulating a K8s
+cluster locally. We offer some guides on setting up a local K8s cluster, as well
 as setting up a cluster on Google Cloud Platform (GCP):
 
 * [Local: Minikube](LOCAL_SETUP.md)
@@ -56,7 +56,7 @@ Install the following:
 Tensorflow and Python notebooks, we will need python. Make sure you have both
 Python 2 and 3 installed as the notebook exercises require Python 3, but
 Tensorflow serving is only supported in Python 2 currently.
-* [Docker](https://www.docker.com/): to build images that can be deployed on k8s
+* [Docker](https://www.docker.com/): to build images that can be deployed on K8s
 * [Git](https://git-scm.com/): so you can access this project and other projects
 * [Pip](https://pip.pypa.io/en/stable/installing/): to install Python packages
 required for the tutorial
@@ -164,10 +164,10 @@ the Estimator model for GPU deployment, please remember to start with
 
 ## Create a Model Server Docker Image
 
-### Docker files and docker images
+### Docker files and Docker images
 Docker images are snapshots of a virtual environment (operating system,
 installed software, files, etc.) and are often built on top of other Docker
-images. For example, the docker file `Dockerfile.cpu` has the following line:
+images. For example, the Docker file `Dockerfile.cpu` has the following line:
 
 ```
 FROM gcr.io/kubeflow/model-server:1.0
@@ -334,7 +334,7 @@ You can now use this image address to deploy to a Kubernetes cluster!
 ## Deploy the Image to Kubernetes
 
 In this section you will edit a configuration file to deploy the image uploaded
-to your registry onto a Kubernetes(k8s) cluster. During deployment, k8s will
+to your registry onto a Kubernetes(K8s) cluster. During deployment, K8s will
 create [pods](https://kubernetes.io/docs/concepts/workloads/pods/pod/) in the
 backend. In our case, each pod will host only a single container image and
 therefore, only one application, namely, the TensorFlow Model Server.
@@ -649,7 +649,7 @@ model that has python libraries embedded in it (e.g. using tf.py_func()) will
 FAIL! 
 * Security is an issue in this tutorial! Simply changing your model server to a
 `LoadBalancer` to open up a tcp port for serving is not secure! If you are
-running on cloud, you will need to enable secure identity for your k8s cluster,
+running on cloud, you will need to enable secure identity for your K8s cluster,
 such as Google Cloud IAP.
 [See the Kubeflow IAP documentation](https://github.com/kubeflow/kubeflow/blob/master/docs/gke/iap.md)
 for more information. 
