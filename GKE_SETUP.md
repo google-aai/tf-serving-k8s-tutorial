@@ -65,29 +65,24 @@ are usually per node. Below we've defaulted to a 2 node cluster.
 gcloud container clusters create kubernetes-cluster \
   --scopes storage-rw \
   --machine-type n1-highmem-4 \
-  --num-nodes 2 \
-  --image-type UBUNTU
+  --num-nodes 2
 ```
 
-**GPU Cluster**: GCP supports two accelerator types in production:
-`nvidia-tesla-k80` and `nvidia-tesla-p100`. Run the following to spin up a
-cluster of 2 nodes with 1 GPU each:
+**GPU Cluster**: GCP supports several NVIDIA GPU accelerators in production:
+`nvidia-tesla-k80`, `nvidia-tesla-p100`, and `nvidia-tesla-v100`. The
+following commands spin up a cluster of 2 nodes with 1 GPU each (For
+`ACCEL_TYPE`, choose one of the options):
 
 ```
-ACCEL_TYPE=nvidia-tesla-k80 | nvidia-tesla-p100
+ACCEL_TYPE=nvidia-tesla-k80 | nvidia-tesla-p100 | nvidia-tesla-v100
 ```
 
 ```
-gcloud beta container clusters create kubernetes-cluster \
+gcloud container clusters create kubernetes-cluster \
   --machine-type n1-highmem-4 \
   --num-nodes 2 \
-  --accelerator type=${ACCEL_TYPE},count=1 \
-  --cluster-version 1.9.2-gke.1
-
+  --accelerator type=${ACCEL_TYPE},count=1
 ```
-
-**NOTE**: Do NOT try to beta create gpu clusters with an image
-type, as this can prevent nvidia drivers (below) from installing properly. 
 
 **Both CPU and GPU Clusters**: run the following to copy cluster info to your
 local ~/.kube/config file, which enables `kubectl` command line to control
@@ -108,17 +103,15 @@ kubectl cluster-info
 
 **GPU Cluster Only!**
 
-Before you can make use of the GPU accelerators on your cluster, make sure to
-follow these steps to setup your Nvidia cuda drivers on any containers that you
-will deploy on GKE (Referenced from
-[this page](https://cloud.google.com/kubernetes-engine/docs/concepts/gpus)):
+Before you can make that you've applied and obtained GPU quota
+(See[this page](https://cloud.google.com/kubernetes-engine/docs/concepts/gpus)):
 
 Make sure your default kubectl context is
 [pointing to your intended GKE cluster](KUBECTL_BASICS.md).
 
 Next, add the GCP Nvidia Driver Daemon as a service to your cluster:
 ```
-kubectl create -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/k8s-1.9/nvidia-driver-installer/cos/daemonset-preloaded.yaml
+kubectl create -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/stable/nvidia-driver-installer/cos/daemonset-preloaded.yaml
 ```
 
 This will create a daemonset in your cluster under a
