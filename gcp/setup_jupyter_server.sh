@@ -30,8 +30,6 @@ err() {
 BASE_DIR=$(dirname "$0")
 # The remote port for Jupyter traffic.
 PORT=8888
-# Check if machine has GPU support.
-LSPCI_OUTPUT=$(lspci -vnn | grep NVIDIA)
 
 #### APT-GET library installations ####
 
@@ -51,53 +49,6 @@ sudo apt-get install -y \
   libfontconfig1 \
   libxext6 \
   || err 'failed to install opencv dependencies'
-
-# If we are using a GPU machine, install cuda libraries
-if [ -n "$LSPCI_OUTPUT" ]; then
-  # The 16.04 installer works with 16.10.
-  sudo curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb \
-    || err 'failed to find cuda repo for ubuntu 16.0'
-  sudo dpkg -i ./cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
-  sudo apt-get update
-  sudo apt-get install cuda-8-0 -y --allow-unauthenticated \
-    || err 'failed to install cuda 8.0'
-
-  # Check for available cuda 8.0 libraries
-  CUDA_LIBRARIES_URL=http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1404/x86_64/
-
-  CUDA_8_LIBRARIES=$(curl $CUDA_LIBRARIES_URL \
-    | grep libcudnn6 \
-    | grep amd64.deb \
-    | grep cuda8.0 \
-    | sed "s/^.*href='\(.*\)'>.*$/\1/") \
-    || err 'failed to find cuda 8 libraries'
-
-  # Get latest runtime and developer libraries for cuda 8.0
-  # Download and install
-  CUDA_8_RUNTIME_LIBRARY=$(echo "$CUDA_8_LIBRARIES" | grep -v dev | tail -n 1)
-  CUDA_8_DEV_LIBRARY=$(echo "$CUDA_8_LIBRARIES" | grep dev | tail -n 1)
-
-  sudo curl -O ${CUDA_LIBRARIES_URL}${CUDA_8_RUNTIME_LIBRARY} \
-    || err 'failed to download cuda runtime library'
-  sudo curl -O ${CUDA_LIBRARIES_URL}${CUDA_8_DEV_LIBRARY} \
-    || err 'failed to download cuda developer library'
-  sudo dpkg -i ${CUDA_8_RUNTIME_LIBRARY} \
-    || err 'failed to install cuda runtime libraries'
-  sudo dpkg -i ${CUDA_8_DEV_LIBRARY} \
-    || err 'failed to install cuda developer libraries'
-
-  # Point TensorFlow at the correct library path
-  # Export to .bashrc so env variable is set when entering VM shell
-  # Remove existing line in bashrc if it already exists.
-  sed -i '/export LD_LIBRARY_PATH.*\/usr\/local\/cuda-8.0/d' $HOME/.bashrc
-  echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-8.0/lib64' \
-    >> $HOME/.bashrc
-
-  # Install cuda profiler tools development library
-  sudo apt-get install -y --allow-unauthenticated libcupti-dev \
-    || err 'failed to install cuda profiler tools'
-fi
-
 
 #### Python Virtual Environment Setup ####
 
@@ -122,11 +73,6 @@ echo 'source $HOME/env/bin/activate' >> $HOME/.bashrc
 # Install requirements in the virtualenv
 pip install -r $BASE_DIR/../jupyter_requirements.txt \
   || err 'failed to pip install a required library'
-
-# If this is a GPU machine, install tensorflow-gpu
-if [ -n "$LSPCI_OUTPUT" ]; then
-  pip install tensorflow-gpu==1.4.0
-fi
 
 #### JUPYTER SETUP ####
 
