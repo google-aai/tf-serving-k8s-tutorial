@@ -79,9 +79,8 @@ def main():
       '-n',
       '--num_trials',
       type=int,
-      default='.txt',
-      help='File used to log batch serving request delays. Will create file'
-           'if it does not exist. Otherwise, it will append to the file.'
+      default=10,
+      help='Number of requests to send to the server'
   )
   args = parser.parse_args()
 

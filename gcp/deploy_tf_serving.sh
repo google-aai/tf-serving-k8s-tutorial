@@ -14,7 +14,7 @@ KUBEFLOW_VERSION=0.2.2
 KUBEFLOW_REPO=`pwd`/kubeflow_repo
 KUBEFLOW_DEPLOY=true
 KUBEFLOW_CLOUD="gke"
-DEPLOYMENT_NAME=tf_serving
+DEPLOYMENT_NAME=kubeflow
 
 TAG=v${KUBEFLOW_VERSION}
 TMPDIR=$(mktemp -d /tmp/tmp.kubeflow-repo-XXXX)
@@ -25,11 +25,6 @@ SOURCE_DIR=$(find ${TMPDIR} -maxdepth 1 -type d -name "kubeflow*")
 mv ${SOURCE_DIR} "${KUBEFLOW_REPO}"
 
 source "${KUBEFLOW_REPO}/scripts/util.sh"
-
-# Check all requirements
-check_install gcloud
-check_install kubectl
-check_install ks
 
 KUBEFLOW_KS_DIR=`pwd`/${DEPLOYMENT_NAME}_ks_app
 
