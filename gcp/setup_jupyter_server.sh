@@ -43,14 +43,6 @@ sudo apt-get install -y python-pip \
   build-essential \
   || err 'failed to install python libraries'
 
-# Install opencv c++ library dependencies
-sudo apt-get install -y \
-  libsm6 \
-  libxrender1 \
-  libfontconfig1 \
-  libxext6 \
-  || err 'failed to install opencv dependencies'
-
 #### Python Virtual Environment Setup ####
 
 # Upgrade pip and virtual env
