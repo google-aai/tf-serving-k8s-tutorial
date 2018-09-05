@@ -1,4 +1,6 @@
+from PIL import Image
 import cv2
+import StringIO
 import numpy as np
 import urllib
 
@@ -17,43 +19,24 @@ def resize_and_pad_image(img, output_image_dim):
     resized and padded image
   """
 
-  h, w = img.shape[:2]
+  old_size = img.size  # old_size[0] is in (width, height) format
 
-  # interpolation method
-  if h > output_image_dim or w > output_image_dim:
-    # use preferred interpolation method for shrinking image
-    interp = cv2.INTER_AREA
-  else:
-    # use preferred interpolation method for stretching image
-    interp = cv2.INTER_CUBIC
+  ratio = float(output_image_dim) / max(old_size)
+  new_size = tuple([int(x * ratio) for x in old_size])
+  # use thumbnail() or resize() method to resize the input image
 
-  # aspect ratio of image
-  aspect = float(w) / h
+  # thumbnail is a in-place operation
 
-  # compute scaling and pad sizing
-  if aspect > 1:  # Image is "wide". Add black pixels on top and bottom.
-    new_w = output_image_dim
-    new_h = np.round(new_w / aspect)
-    pad_vert = (output_image_dim - new_h) / 2
-    pad_top, pad_bot = int(np.floor(pad_vert)), int(np.ceil(pad_vert))
-    pad_left, pad_right = 0, 0
-  elif aspect < 1:  # Image is "tall". Add black pixels on left and right.
-    new_h = output_image_dim
-    new_w = np.round(new_h * aspect)
-    pad_horz = (output_image_dim - new_w) / 2
-    pad_left, pad_right = int(np.floor(pad_horz)), int(np.ceil(pad_horz))
-    pad_top, pad_bot = 0, 0
-  else:  # square image
-    new_h = output_image_dim
-    new_w = output_image_dim
-    pad_left, pad_right, pad_top, pad_bot = 0, 0, 0, 0
+  # im.thumbnail(new_size, Image.ANTIALIAS)
 
-  # scale to IMAGE_DIM x IMAGE_DIM and pad with zeros (black pixels)
-  scaled_img = cv2.resize(img, (int(new_w), int(new_h)), interpolation=interp)
-  scaled_img = cv2.copyMakeBorder(scaled_img,
-                                  pad_top, pad_bot, pad_left, pad_right,
-                                  borderType=cv2.BORDER_CONSTANT, value=0)
-  return scaled_img
+  scaled_img = img.resize(new_size, Image.ANTIALIAS)
+  # create a new image and paste the resized on it
+
+  padded_img = Image.new("RGB", (output_image_dim, output_image_dim))
+  padded_img.paste(scaled_img, ((output_image_dim - new_size[0]) // 2,
+                    (output_image_dim - new_size[1]) // 2))
+
+  return padded_img
 
 
 def preprocess_and_encode_images(image_paths, output_image_dim):
@@ -76,17 +59,16 @@ def preprocess_and_encode_images(image_paths, output_image_dim):
   jpeg_batch = []
 
   for image_path in image_paths:
-    feature = None
+    image = None
     if 'http' in image_path:
-      resp = urllib.urlopen(image_path)
-      feature = np.asarray(bytearray(resp.read()), dtype='uint8')
-      feature = cv2.imdecode(feature, cv2.IMREAD_COLOR)
+      image = Image.open(urllib.urlopen(image_path))
     else:
-      feature = cv2.imread(image_path)  # Parse the image from your local disk.
+      image = Image.open(image_path)  # Parse the image from your local disk.
     # Resize and pad the image
-    feature = resize_and_pad_image(feature, output_image_dim)
+    image = resize_and_pad_image(image, output_image_dim)
+    jpeg_image = StringIO.StringIO()
+    image.save(jpeg_image, format='JPEG')
     # Append to features_array
-    jpeg_image = cv2.imencode('.jpg', feature)[1].tostring()
-    jpeg_batch.append(jpeg_image)
+    jpeg_batch.append(jpeg_image.getvalue())
 
   return jpeg_batch

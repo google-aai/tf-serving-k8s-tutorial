@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Set up a VM environment for data science with Tensorflow GPU support.
+# Set up a simple VM with some basic python libraries and Jupyter to do
+# estimator/keras work.
 #
 # Note: RUN THIS ON A COMPUTE ENGINE VM, not in the cloud shell!
 #
