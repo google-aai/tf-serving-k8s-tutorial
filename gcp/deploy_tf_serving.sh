@@ -11,7 +11,7 @@ cd ~
 
 # Install Kubeflow
 KUBEFLOW_VERSION=0.2.2
-KUBEFLOW_REPO=`pwd`/kubeflow_repo
+KUBEFLOW_REPO=~/kubeflow_repo
 KUBEFLOW_DEPLOY=true
 KUBEFLOW_CLOUD="gke"
 DEPLOYMENT_NAME=kubeflow

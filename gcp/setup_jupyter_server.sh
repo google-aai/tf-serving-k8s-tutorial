@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Set up a VM environment for data science with Tensorflow GPU support.
+# Set up a simple VM with some basic python libraries and Jupyter to do
+# estimator/keras work.
 #
 # Note: RUN THIS ON A COMPUTE ENGINE VM, not in the cloud shell!
 #
@@ -41,14 +42,6 @@ sudo apt-get install -y python-pip \
   python-dev \
   build-essential \
   || err 'failed to install python libraries'
-
-# Install opencv c++ library dependencies
-sudo apt-get install -y \
-  libsm6 \
-  libxrender1 \
-  libfontconfig1 \
-  libxext6 \
-  || err 'failed to install opencv dependencies'
 
 #### Python Virtual Environment Setup ####
 
