@@ -1,5 +1,9 @@
 # Deploying Tensorflow Serving using Kubernetes Tutorial
 
+TODO: README is currently DEPRECATED. It will be updated after Strata Data
+ Conference in NY. Please switch to tag `march-2018` for a working tutorial
+ from Strata Data Conference San Jose.
+
 ### What this project is
 This project is a tutorial that walks through the steps required to deploy and
 [serve a TensorFlow model](https://www.tensorflow.org/serving/serving_basic)
@@ -9,22 +13,11 @@ The key concepts covered in this tutorial are as follows:
 
 * Convert a TensorFlow(TF) graph trained through various APIs into a servable
 model
-* Dockerize your servable model and push it to a container registry
-* Deploy your Docker container image onto a Kubernetes(K8s) cluster
-* Deploy a external load balancer to receive requests and send to different
-backend pods/nodes.
-* Send online prediction requests to the cluster via a client.
-* Profile latency and throughput. Experiment with different batch sizes.
+* Serve the model using Tensorflow Serving, deployed via [KubeFlow](kubeflow.org)
+* Send online prediction requests to the cluster via a client. Profile latency and throughput. Experiment with different batch sizes.
+* Deploy Istio to monitor TF serving workloads.
 * Visualize image pixel contributions to model predictions to explain how the
 model sees the world.
-
-### What this project is not
-
-This tutorial is not meant to be the quickest path toward deploying TF
-serving using Kubernetes. If you are looking for automated solutions to deploy
-Tensorflow Serving for production, please check out
-[Kubeflow](https://github.com/kubeflow/kubeflow), which automates many of the
-Docker/K8s steps covered in this tutorial.
 
 ## Setup
 
