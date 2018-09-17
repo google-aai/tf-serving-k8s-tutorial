@@ -282,6 +282,17 @@ Try sending requests with the profiler and compute latency and throughput.
 Latency is simply the round trip delay returned by the profiler. An
 approximation of throughput is the number of batches divided by latency when a
 large batch size is used. Try varying batch sizes between 1 and 256.
+Here is an example configuration:
+
+```
+python resnet_profiler.py \
+--server 127.0.0.1 \
+--port 9000 \
+--model_type ${MODEL_TYPE} \
+--replications 16 \
+--num_trials 10 \
+cat_sample.jpg
+```
 
 What do you notice about CPU/GPU performance with different batch sizes?
 
