@@ -1,9 +1,5 @@
 # Deploying Tensorflow Serving using Kubernetes Tutorial
 
-TODO: README is currently DEPRECATED. It will be updated after Strata Data
- Conference in NY. Please switch to tag `march-2018` for a working tutorial
- from Strata Data Conference San Jose.
-
 ### What this project covers
 This project is a tutorial that walks through the steps required to deploy and
 [serve a TensorFlow model](https://www.tensorflow.org/serving/serving_basic)
