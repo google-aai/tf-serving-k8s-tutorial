@@ -2,6 +2,67 @@
 
 ## KubeFlow Install
 
+**Issue:** Something went wrong and I need to restart/reinstall minikube!
+
+**Answer:** Try running:
+
+```
+minikube delete
+```
+
+to take down the cluster, and then restart minikube to create a new cluster:
+
+```
+minikube start --cpus 4 --memory 8096 --disk-size=40g
+```
+
+If this doesn't work because "Docker machine "minikube" does not exist," delete
+the .minikube from your home directory. You may have to use sudo permissions:
+
+```
+sudo rm -rf ~/.minikube
+```
+
+Restart minikube to download the latest minikube ISO and restart your cluster:
+
+```
+minikube start --cpus 4 --memory 8096 --disk-size=40g
+```
+
+Since you recreated your cluster, if you previously installed kubeflow on an old
+cluster, you will need to reconfigure the app to point to your new cluster. See
+the issue below.
+
+**Issue:** I needed to recreate my cluster, and trying to run
+`ks apply default -c kubeflow-core` now returns:
+
+```
+ERROR Attempting to deploy to environment 'default' at '<some address>', but cannot locate a server at that address
+```
+
+**Answer:** KubeFlow is still pointing to your old cluster address! Run:
+```
+kubectl describe svc kubernetes
+```
+and note the `address:port` under `EndPoints:`. Open up the app.yaml file in
+your kubeflow_ks_app directory, and edit the environment -> default -> server
+value to point to this new `address:port` (you will need to add `https://`
+before this `address:port`), i.e.
+ 
+```
+environments:
+  default:
+    destination:
+      namespace: default
+      server: https://<your-kubernetes-endpoint-address-and-port>
+``` 
+
+Save your changes, and then rerun:
+
+```
+ks apply default -c kubeflow-core
+```
+
 **Issue:** KubeFlow failed to install due to a missing dependency!
 
 **Answer:** Install that dependency, remove the
@@ -31,23 +92,6 @@ kubectl get pods
 ```
 
 You should some pods terminating, with only a single pod tf-hub-0 running.
-
-**Issue:** I needed to recreate my cluster, and trying to run
-`ks apply default -c kubeflow-core` now returns:
-
-```
-ERROR Attempting to deploy to environment 'default' at '<some address>', but cannot locate a server at that address
-```
-
-**Answer:** KubeFlow is still pointing to your old cluster address! Run:
-```
-kubectl describe svc kubernetes
-```
-and note the `address:port` under `EndPoints:`. Open up the app.yaml file in
-your kubeflow_ks_app directory, and edit the server under environment -> default
-to point to this new `address:port`. Then rerun:
-
-`ks apply default -c kubeflow-core`
 
 ## TensorFlow Serving
 

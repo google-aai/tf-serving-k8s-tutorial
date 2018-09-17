@@ -1,8 +1,28 @@
 # Building a Servable TensorFlow Model
 
-The exercises here lead you step by step on how to take a TensorFlow model used
-in training and package it for serving. It also includes exercises on how to
-validate your request and response APIs.
+The primary difference between a servable model and a training model is how the
+model is called during prediction. Typically in training, a data scientist will
+bundle multiple images and labels into records, and generate samples using APIs
+such as [TensorFlow datasets](https://www.tensorflow.org/guide/datasets). In
+some cases, the images ingested from datasets are also run through TensorFlow
+graph components that randomly perturb the image to improve robustness in the
+model, e.g. rotating, mirroring, or making slight changes to pixel values.
+However, when serving a model for prediction, users typically want to predict
+the class for the image as is.
+
+We provide two options for this exercise:
+[Estimators](https://www.tensorflow.org/guide/estimators) and
+[Keras](https://keras.io/), both which are popular abstractions of choice used
+by many data scientists and researchers to train models. Keras is a high level
+API that makes it very easy to implement and train a model.
+However, it lacks the flexibility of control and functionality that Tensorflow
+has (e.g. optimizer types, custom visualization/logging, less conventional
+model/graph components, etc.), which Estimators can support as part of its API. 
+
+We recommend working through the Keras exercise if you are less experienced with
+TensorFlow. We encourage more experienced TensorFlow users to run through the
+Estimators Exercise, as it contains more refactoring, debugging, and unit
+testing examples.
 
 **Exercises:**
 
@@ -53,3 +73,7 @@ in terms of input and output.
 the Estimator model for GPU deployment, please remember to start with
 “channels_last” for this validation step, and then create a new model with
 “channels_first” to test on your GPU cluster later on.
+
+**If you made it here, congratulations!** 
+[Continue on here](README.md#serving-your-model) to learn how to serve your
+model!

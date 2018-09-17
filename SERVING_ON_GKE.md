@@ -67,4 +67,22 @@ SERVING_POD=`kubectl get pods --selector="app=my-tf-serving" --output=template -
 kubectl get pods ${SERVING_POD}
 ```
 
-For troubleshooting, [see here](TROUBLESHOOTING.md#tensorflow-serving).
+[Proceed to the TF Client section](README.md#tf-client)
+ to continue with using a client to access your server!
+
+**Troubleshooting:** [see here](TROUBLESHOOTING.md#tensorflow-serving).
+
+## GPU Serving Configurations
+
+If you have a GKE cluster with GPUs, you will need to follow instructions to
+enable GPUs. You can go [here](https://cloud.google.com/kubernetes-engine/docs/how-to/gpus)
+for the full documentation, but essentially if you already have a cluster up
+and running and kubectl linked to the cluster, you simply need to run a
+daemonset to install device plugins for your GPU:
+
+```
+kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/stable/nvidia-driver-installer/cos/daemonset-preloaded.yaml
+```
+
+Then, [follow the instructions here](SERVING_ON_PREM.md#gpu-serving-configurations)
+to setup KubeFlow TensorFlow serving to use GPUs.

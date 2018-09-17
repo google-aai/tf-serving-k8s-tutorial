@@ -82,11 +82,13 @@ Now, set the following parameters for your serving app `my-tf-serving`:
 ks param set my-tf-serving name my-tf-serving
 ks param set my-tf-serving numGpus 0
 ks param set my-tf-serving modelName resnet
-ks param set my-tf-serving modelPath /mnt/work/tf-serving-k8s-tutorial/${MODEL_TYPE}_servable/
+ks param set my-tf-serving modelPath /mnt/work/tf-serving-k8s-tutorial/jupyter/${MODEL_TYPE}_servable/
 ks param set my-tf-serving defaultCpuImage "gcr.io/kubeflow-images-public/tensorflow-serving-1.8@sha256:a6ffaa593939fce62fd9babc6c6c7539c40e9bf48deeb290e9ae3ef756453336"
 ```
 
-Next, we will configure your storage based on your PV. By default, TF serving
+Note that the directory `/mnt/` will need to point to your Jupyter server's home
+folder in order for the `modelPath` to work correctly. In order to do this,
+we will configure your storage based on your PV. By default, TF serving
 will serve locally, or if the modelPath contains certain prefixes, e.g. "s3://"
 or "gs://", it will use the cloud provider's storage granted that your cloud
 credentials are correctly set. Since we will be serving directly from the PV,
@@ -109,6 +111,9 @@ a minute or so:
 SERVING_POD=`kubectl get pods --selector="app=my-tf-serving" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
 kubectl get pods ${SERVING_POD}
 ```
+
+[Proceed to the TF Client section](README.md#tf-client)
+ to continue with using a client to access your server!
 
 **Troubleshooting**: [see here](TROUBLESHOOTING.md#tensorflow-serving).
 

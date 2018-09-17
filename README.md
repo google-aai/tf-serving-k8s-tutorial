@@ -67,9 +67,9 @@ kubectl get svc
 kubectl get pods
 ```
 
-**Troubleshooting:** For troubleshooting, see here.
+Once your pods are all up and running, continue.
 
-
+**Troubleshooting:** see [here](TROUBLESHOOTING.md#kubeflow-install).
 
 ## Accessing JupyterHub and Spinning up a Notebook
 
@@ -114,9 +114,10 @@ In the dropdown menu, select the TensorFlow 1.8 CPU image:
 ![jupyterhub tf 1.8 cpu](img/jupyterhub_kubeflow_img.png)
 
 Set CPU and memory to whatever your cluster can handle. 1 CPU and 2Gi memory is
-sufficient for the exercises, but if you are on a cluster and can afford more
-resources, more CPU and memory will allow you to spin up and run notebooks
-faster without having to shut down notebook kernels.
+sufficient, but if you are on a cluster and can afford more resources, more CPU
+and memory will allow you to spin up and run notebooks faster without having to
+shut down notebook kernels. (The minikube setup used above will probably only
+allow 1 CPU for Jupyter without interfering with the model serving process.)
 
 The notebook server may take a few minutes to spin up depending on cluster
 resources, so be patient. Once it has spun up, go into the work directory,
@@ -127,19 +128,32 @@ next part of this exercise.
 
 ## Create a Servable Resnet Model from Estimator and Keras APIs
 
-Now that all of the environment setup is out of the way, let’s create a servable
-model! 
+### Motivation
+
+Your data scientists have used JupyterHub to scale out training and exploration
+of datasets, and have finally built a few lovely models that meet performance
+requirements. It is now time to serve models live in production! The first step
+is to take their trained models, at whatever checkpoint they deem most optimal,
+and package it for optimal serving performance using
+[TensorFlow Serving](https://www.tensorflow.org/serving/).
+
+As a data scientist or production engineer, it helps to understand how to bridge
+the gap between training and serving. The following exercises will guide you on
+doing so.
+
+### Exercises
 
 [Run the exercises here](SERVABLE_MODEL.md) (solutions included).
 
 
-## Running TensorFlow Serving on Your Packaged Model
+## Serving Your Model
 
-### The Challenge
+Now that you've packaged your data scientists' models into a servable format,
+you're faced with an issue: JupyterHub by default, keeps each Jupyter
+environment and resources separate from all other environments (for good
+reason). In K8s, this works as follows:
 
-Your data scientists in JupyterHub have decided that a set of models generated
-in a few Jupyter servers are ready for serving in production. JupyterHub
-by default creates a
+JupyterHub creates a
 [persistent volume (pv)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
 and attaches a
 [persistent volume claim (pvc)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims)
@@ -151,8 +165,9 @@ environment). Unfortunately, no other users/pods are allowed to access this
 environment without setting permissions without reconfiguring the volume to
 accept multiple pods to read and write.
 
-Fortunately, we have two options to handle this: by changing
-options for k8s pv, or by serving the model from cloud storage!
+Fortunately, we have two options to handle this: by changing options for PVs
+(general solution that works on most if not all clusters), or by serving the
+model from a cloud storage system (s3, gs, etc.).
 
 ### Setting up TF Serving for your Model
 
@@ -174,27 +189,35 @@ two options below depending on where you running this exercise:
 Serving deployment using KubeFlow for local (minikube) and on-prem clusters.
 
 [Follow the instructions here](SERVING_ON_GKE.md) for serving on the Google
-Cloud Platform using GKE. While we do not explicitly provide an example here,
-similar configuration paths exist for Amazon EKS and Microsoft AKS.
-
-### Setup port forwarding
-
-Once you have your serving pod running, use port forwarding on port 9000 to
-enable secure access to your model server:
-
-```
-kubectl port-forward ${SERVING_POD} 9000:9000
-```
-
+Cloud Platform using GKE. Note that the on-prem instructions above also work
+for GKE, but serving your model from cloud storage offers flexibility to
+securely share your models with other users, projects, and k8s clusters, in case
+there is a need to scale out to other environments.
 
 ## TF Client
 
 ### Setup
 
-If you choose to use Google cloud to host a client, a [setup script](gcp/setup_client_vm.sh)
-already exists for deploying all required libraries on a compute engine VM.
+**Note:** If you choose to use Google cloud to host a client, you can spin up
+the VM using [compute engine](https://cloud.google.com/compute/), ssh into it,
+and run a [setup script](gcp/setup_client_vm.sh) to deploy all required
+libraries. There's no need to follow the rest of the steps in the setup steps
+below. However, you may want to change your `my-tf-serving` application type to
+`LoadBalancer` to ensure that your VM can reach it, since you are not running
+kubectl from the VM. For simplicity and best practice however, we recommend
+running your client locally if possible.
 
 The following steps below are for setting up a client locally.
+
+Setup port forwarding on port 9000 to enable secure access to your model server:
+
+```
+SERVING_POD=`kubectl get pods --selector="app=my-tf-serving" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
+kubectl port-forward ${SERVING_POD} 9000:9000
+```
+
+Since your port forwarding must be kept alive, open up a new terminal shell to
+continue.
 
 First, create a *Python 2* virtual environment.
 
@@ -216,21 +239,43 @@ Then cd into the client directory within the tutorial project:
 cd client
 ```
 
-To run the client, enter the command:
+To test the client, make sure you have your shell variable pointing to the type
+of model you generated. This is because the default pre-trained models for
+Estimator and Keras APIs have classes that are labeled slightly differently,
+so the client needs to interpret the results that it receives from the models.
+If the `MODEL_TYPE` variable is unset, set it again:
 
 ```
-python resnet_client.py --server <load-balancer-external-ip> \
-  --port 9000 \
-  <image-path-or-url-1> <image-path-or-url-2> ...
+MODEL_TYPE=<estimator | keras>  # choose one
 ```
 
-For the external-ip, if you are using minikube, the ip should be `localhost`.
-If you are running on Google Cloud, you can find the ip by running
-`kubectl get svc`.
+Then enter the command:
 
-For the image paths and/or urls, you can use the cat_sample.jpg in the current
-directory, or you find some RGB pictures online, such as:
-https://www.popsci.com/sites/popsci.com/files/styles/1000_1x_/public/images/2017/09/depositphotos_33210141_original.jpg?itok=MLFznqbL&fc=50,50
+```
+python resnet_client.py \
+--server 127.0.0.1 \
+--port 9000 \
+--model_type ${MODEL_TYPE} \
+cat_sample.jpg
+```
+
+The server should return a list of the 5 top classes and confidences
+(probabilities) that the model thinks the image belongs to each class.
+
+You can also batch predict by specifying multiple image paths/urls. For example:
+
+```
+python resnet_client.py \
+--server 127.0.0.1 \
+--port 9000 \
+--model_type ${MODEL_TYPE} \
+cat_sample.jpg \
+"https://www.popsci.com/sites/popsci.com/files/styles/1000_1x_/public/images/2017/09/depositphotos_33210141_original.jpg?itok=MLFznqbL&fc=50,50"
+```
+
+will do batch prediction on a local cat image and a squirrel image online.
+
+Congratulations!
 
 ![you just got served](img/you_got_served.png)
 
@@ -272,27 +317,25 @@ The visualization is based on a recent research paper by M. Sundararajan,
 
 ### General Disclaimers and Pitfalls
 
-* Tensorflow Server is written in c++, so any Tensorflow code in your
+* TensorFlow Server is written in c++, so any Tensorflow code in your
 model that has python libraries embedded in it (e.g. using tf.py_func()) will
-FAIL! 
-* Security is an issue in this tutorial! Simply changing your model server to a
-`LoadBalancer` to open up a tcp port for serving is not secure! If you are
-running on cloud, you will need to enable secure identity for your K8s cluster,
+FAIL! Make sure that your entire TensorFlow graph that is being imported, runs
+in the TensorFlow c++ environment.
+* Security is an issue! If you decide not to use port forwarding and instead
+reconfigure your `my-tf-serving` k8s service to `LoadBalancer` on a Cloud k8s
+engine, make sure to enable identity aware control for your K8s cluster,
 such as Google Cloud IAP.
 [See the Kubeflow IAP documentation](https://github.com/kubeflow/kubeflow/blob/master/docs/gke/iap.md)
 for more information. 
 
 ### KSonnet and Kubeflow
 
-* [Kubeflow](https://github.com/kubeflow/kubeflow) automates Kubernetes
-deployments for TF notebook, model training (distributed and GPU), and model
-serving. Much of this tutorial's content (i.e. deploying TF serving) can be
-automated using their solutions. Please check out their project and contribute
-to the discussion!
-* [ksonnet.io](https://ksonnet.io/tour/welcome) Ksonnet allows you to define
-functions that take in parameters that determine
-the value of fields set in your yaml file. Furthermore, these parameter values
-can be configured at the command line for different environments. Try out their
-tutorial!
+To better appreciate KubeFlow, it is important to have a firm grasp of 
+[k8s](kubernetes.io), and a good understanding of how to use
+[ksonnet](https://ksonnet.io) to create apps and deployments on k8s. 
+ 
+For more KubeFlow examples, go to [kubeflow.org](kubeflow.org). Also,
+[join the community](https://github.com/kubeflow/community) for discussions,
+updates, or ways to help contribute and improve the project.
 
 
