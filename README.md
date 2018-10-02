@@ -3,13 +3,14 @@
 ### What this project covers
 This project is a tutorial that walks through the steps required to deploy and
 [serve a TensorFlow model](https://www.tensorflow.org/serving/serving_basic)
-using [Kubernetes (K8s)](https://kubernetes.io/).
+using [Kubernetes (K8s)](https://kubernetes.io/). The latest version runs the
+entire exercise on a K8s cluster using [KubeFlow](kubeflow.org).
 
 The key concepts covered in this tutorial are as follows:
 
 * Convert a TensorFlow(TF) graph trained through various APIs into a servable
 model
-* Serve the model using Tensorflow Serving, deployed via [KubeFlow](kubeflow.org)
+* Serve the model using Tensorflow Serving
 * Send online prediction requests to the cluster via a client. Profile latency
 and throughput. Experiment with different batch sizes.
 * Visualize image pixel contributions to model predictions to explain how the
@@ -20,11 +21,11 @@ model sees the world.
 Before the fun begins, we need to setup our environment and K8s clusters. 
 
 As a developer, it often helps to create a local deployment prior to deploying
-on the cloud. Local deployment is challenging in that one's local environment
-varies significantly between individuals. It is up to the student to figure out
-how to setup and validate the following required software for emulating a K8s
-cluster locally. We offer some guides on setting up a local K8s cluster, as well
-as setting up a cluster on Google Cloud Platform (GCP):
+on the cloud. We offer some guides on setting up a local K8s cluster, as well
+as setting up a cluster on Google Cloud Platform (GCP) below. You can also
+experiment with this tutorial on [Amazon EKS](https://aws.amazon.com/eks/) or
+[Microsoft AKS]https://azure.microsoft.com/en-us/services/kubernetes-service/).
+Feedback is welcomed!
 
 * [Local: Minikube](LOCAL_SETUP.md)
 * [Cloud: Google K8s Engine](GKE_SETUP.md)
@@ -43,9 +44,9 @@ in github
 
 ## Deploy KubeFlow onto your cluster
 
-[KubeFlow](kubeflow.org) is always in an active stage of development, so we will
-be using a stable tag v0.2.5. Run the following command to deploy KubeFlow onto
-your Kubernetes cluster:
+[KubeFlow](kubeflow.org) is always in an active stage of development. For this
+exercuse, we will be using a stable tag v0.2.5. Run the following command to deploy
+KubeFlow onto your Kubernetes cluster:
 
 ```
 cd ~
@@ -205,7 +206,8 @@ running your client locally if possible.
 
 The following steps below are for setting up a client locally.
 
-Setup port forwarding on port 9000 to enable secure access to your model server:
+Setup port forwarding on port 9000 to enable secure access to your model server
+via a local port:
 
 ```
 SERVING_POD=`kubectl get pods --selector="app=my-tf-serving" --output=template --template="{{with index .items 0}}{{.metadata.name}}{{end}}"`
@@ -245,7 +247,8 @@ If the `MODEL_TYPE` variable is unset, set it again:
 MODEL_TYPE=<estimator | keras>  # choose one
 ```
 
-Then enter the command:
+Then enter the command (note that 127.0.0.1 is used below assuming
+you have set up port forwarding with kubectl):
 
 ```
 python resnet_client.py \
@@ -320,9 +323,7 @@ pixels from a blank image (e.g. all grey pixels) to the actual image.
 The visualization is based on a recent research paper by M. Sundararajan,
  A. Taly, and Q. Yan: [Axiomatic Attribution for Deep Networks](https://arxiv.org/pdf/1703.01365.pdf).
 
-## Additional Resources
-
-### General Disclaimers and Pitfalls
+## General Disclaimers and Pitfalls
 
 * TensorFlow Server is written in c++, so any Tensorflow code in your
 model that has python libraries embedded in it (e.g. using tf.py_func()) will
@@ -335,7 +336,7 @@ such as Google Cloud IAP.
 [See the Kubeflow IAP documentation](https://github.com/kubeflow/kubeflow/blob/master/docs/gke/iap.md)
 for more information. 
 
-### KSonnet and Kubeflow
+## Additional KubeFlow Resources
 
 To better appreciate KubeFlow, it is important to have a firm grasp of 
 [k8s](kubernetes.io), and a good understanding of how to use
@@ -344,5 +345,3 @@ To better appreciate KubeFlow, it is important to have a firm grasp of
 For more KubeFlow examples, go to [kubeflow.org](kubeflow.org). Also,
 [join the community](https://github.com/kubeflow/community) for discussions,
 updates, or ways to help contribute and improve the project.
-
-
