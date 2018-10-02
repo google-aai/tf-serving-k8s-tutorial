@@ -24,7 +24,7 @@ As a developer, it often helps to create a local deployment prior to deploying
 on the cloud. We offer some guides on setting up a local K8s cluster, as well
 as setting up a cluster on Google Cloud Platform (GCP) below. You can also
 experiment with this tutorial on [Amazon EKS](https://aws.amazon.com/eks/) or
-[Microsoft AKS]https://azure.microsoft.com/en-us/services/kubernetes-service/).
+[Microsoft AKS](https://azure.microsoft.com/en-us/services/kubernetes-service/).
 Feedback is welcomed!
 
 * [Local: Minikube](LOCAL_SETUP.md)
