@@ -55,6 +55,14 @@ def main():
       help='Paths (local or url) to images you would like to label'
   )
   parser.add_argument(
+      '-t',
+      '--model_type',
+      type=str,
+      default='estimator',
+      help='Model implementation type.'
+           'Default is \'estimator\'. Other options: \'keras\''
+  )
+  parser.add_argument(
       '-d',
       '--dim',
       type=int,
@@ -66,7 +74,7 @@ def main():
       '-r',
       '--replications',
       type=int,
-      default=1,
+      default=4,
       help='How many times to replicate samples to send a larger batch size'
   )
   parser.add_argument(
@@ -95,6 +103,7 @@ def main():
   for i in range(0, args.replications):
     batch_array = np.append(batch_array, jpeg_batch, axis=0)
   batch_size = len(batch_array)
+  print("Number of trials: " + str(args.num_trials))
   print("Batch size: " + str(batch_size))
 
   # Call the server num_trials times
