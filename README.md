@@ -45,7 +45,7 @@ in github
 ## Deploy KubeFlow onto your cluster
 
 [KubeFlow](kubeflow.org) is always in an active stage of development. For this
-exercuse, we will be using a stable tag v0.2.5. Run the following command to deploy
+exercise, we will be using a stable tag v0.2.5. Run the following command to deploy
 KubeFlow onto your Kubernetes cluster:
 
 ```
@@ -164,7 +164,8 @@ accept multiple pods to read and write.
 
 Fortunately, we have two options to handle this: by changing options for PVs
 (general solution that works on most if not all clusters), or by serving the
-model from a cloud storage system (s3, gs, etc.).
+model from a cloud storage system (s3, gs, etc.). The steps in the below
+section will guide you through the process for serving on prem or on cloud.
 
 ### Setting up TF Serving for your Model
 
