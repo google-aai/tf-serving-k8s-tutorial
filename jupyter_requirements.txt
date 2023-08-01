@@ -5,4 +5,4 @@ keras==2.1.4
 matplotlib
 pillow
 requests
-tensorflow==1.8.0
+tensorflow==2.11.1
