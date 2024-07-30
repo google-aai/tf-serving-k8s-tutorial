@@ -1,4 +1,4 @@
-grpcio==1.8.6
+grpcio==1.53.2
 jupyter
 h5py==2.7.1
 keras==2.1.4
