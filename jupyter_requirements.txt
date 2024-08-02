@@ -1,7 +1,7 @@
 grpcio==1.8.6
 jupyter
 h5py==2.7.1
-keras==2.1.4
+keras==2.13.1
 matplotlib
 pillow
 requests
